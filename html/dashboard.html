@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Overview - e-Barangay Health</title>
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- SIDEBAR CONTAINER -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="../image/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+        </div>
+        <div class="brand-text">
+          <h2>e-Barangay <span>Health</span></h2>
+          <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
+        </div>
+      </div>
+    <div class="menu-section">
+      <span class="menu-title">MAIN MENU</span>
+      <ul class="menu-list">
+        <li class="active">
+          <a href="dashboard.html">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span>Dashboard Overview</span>
+          </a>
+        </li>
+        <li>
+          <a href="child.html">
+            <i class="fa-solid fa-syringe"></i>
+            <span>Child Immunization</span>
+          </a>
+          <span class="badge badge-red">3</span>
+        </li>
+        <li>
+          <a href="maternal.html">
+            <i class="fa-solid fa-person-pregnant"></i>
+            <span>Maternal / Prenatal</span>
+          </a>
+          <span class="badge badge-red">2</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-title">MANAGEMENT</span>
+      <ul class="menu-list">
+        <li>
+          <a href="purok.html">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Purok Masterlists</span>
+          </a>
+        </li>
+        <li>
+          <a href="reports.html">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Reports & Exports</span>
+          </a>
+        </li>
+        <li>
+          <a href="security.html">
+            <i class="fa-solid fa-user-lock"></i>
+            <span>Security Settings</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="avatar">M</div>
+        <div class="user-info">
+          <h4>Maria Santos</h4>
+          <p>BHW · Purok Calachuchi</p>
+        </div>
+      </div>
+      <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="main-content">
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="top-header">
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search patient name or record ID...">
+      </div>
+      <div class="header-right">
+        <div class="location-tag">
+          <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
+        </div>
+        <div class="icon-btn"><i class="fa-solid fa-bell"></i></div>
+        <div class="time-display">
+          <span class="time" id="clock-time">08:52:37 PM</span>
+          <span class="date" id="clock-date">Fri, Aug 7, 2026</span>
+        </div>
+      </div>
+    </header>
+
+      <!-- DASHBOARD STATS OVERVIEW -->
+      <section class="dashboard-header">
+        <h1>Dashboard Overview</h1>
+        <p>Summary of health records for Brgy. New Katipunan, Matanao — August 2026</p>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card blue">
+          <h2>10</h2>
+          <h3>Total Child Records</h3>
+          <p>Active in logbook</p>
+        </div>
+        <div class="stat-card red">
+          <h2>5</h2>
+          <h3>Overdue Immunizations</h3>
+          <p>3 child · 2 maternal</p>
+        </div>
+        <div class="stat-card yellow">
+          <h2>3</h2>
+          <h3>Due This Month</h3>
+          <p>Upcoming child visits</p>
+        </div>
+        <div class="stat-card green">
+          <h2>4</h2>
+          <h3>Completed Visits</h3>
+          <p>Child visits this month</p>
+        </div>
+      </section>
+
+      <!-- TOP ROW: RECENT SUMMARIES -->
+      <section class="two-col-grid">
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-syringe text-cyan"></i> Child Immunization Summary</h3>
+            <a href="child.html" class="btn-action">View All &rarr;</a>
+          </div>
+          <ul class="data-list">
+            <li>
+              <div>
+                <strong>Sofia Marie Reyes</strong>
+                <span>Purok Walingwaling · 2 mos · Female</span>
+              </div>
+              <span class="status-pill status-red">• Overdue</span>
+            </li>
+            <li>
+              <div>
+                <strong>Ethan James Fernandez</strong>
+                <span>Purok Sampaguita · 8 mos · Male</span>
+              </div>
+              <span class="status-pill status-green">• Completed</span>
+            </li>
+            <li>
+              <div>
+                <strong>Isabella Rose Villanueva</strong>
+                <span>Purok Santan · 3 mos · Female</span>
+              </div>
+              <span class="status-pill status-red">• Overdue</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-person-pregnant text-cyan"></i> Maternal / Prenatal Summary</h3>
+            <a href="maternal.html" class="btn-action">View All &rarr;</a>
+          </div>
+          <ul class="data-list">
+            <li>
+              <div>
+                <strong>Rosario Blanca Torres</strong>
+                <span>Purok Walingwaling · BP: 120/80</span>
+              </div>
+              <span class="status-pill status-green">• Completed</span>
+            </li>
+            <li>
+              <div>
+                <strong>Cristina Mae Navarro</strong>
+                <span>Purok Sampaguita · BP: 140/90</span>
+              </div>
+              <span class="status-pill status-red">• Overdue</span>
+            </li>
+            <li>
+              <div>
+                <strong>Analiza Joy Soriano</strong>
+                <span>Purok Santan · BP: 115/75</span>
+              </div>
+              <span class="status-pill status-yellow">• Due This Month</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- BOTTOM ROW: PUROK BREAKDOWN & VACCINE COVERAGE -->
+      <section class="two-col-grid">
+        <!-- PUROK BREAKDOWN -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-location-dot text-cyan"></i> Purok Breakdown — Children</h3>
+          </div>
+          <div class="breakdown-list">
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Calachuchi</span>
+                <span>2</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar cyan" style="width: 100%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Bougainvillea</span>
+                <span>2</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar blue" style="width: 100%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Walingwaling</span>
+                <span>2</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar cyan" style="width: 100%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Sampaguita</span>
+                <span>1</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar blue" style="width: 50%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Santan</span>
+                <span>1</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar cyan" style="width: 50%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Rose</span>
+                <span>1</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar blue" style="width: 50%;"></div></div>
+            </div>
+
+            <div class="breakdown-item">
+              <div class="item-info">
+                <span>Daisy</span>
+                <span>1</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar cyan" style="width: 50%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VACCINE COVERAGE RATE -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-capsules text-cyan"></i> Vaccine Coverage Rate</h3>
+          </div>
+          <div class="coverage-list">
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>BCG</span>
+                <span class="text-cyan">90%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar cyan" style="width: 90%;"></div></div>
+            </div>
+
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>OPV</span>
+                <span class="text-green">70%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar green" style="width: 70%;"></div></div>
+            </div>
+
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>IPV</span>
+                <span class="text-yellow">50%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar yellow" style="width: 50%;"></div></div>
+            </div>
+
+             <div class="coverage-item">
+              <div class="item-info">
+                <span>PENTA</span>
+                <span class="text-red">40%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar red" style="width: 40%;"></div></div>
+            </div>
+
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>PCV</span>
+                <span class="text-blue">50%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar blue" style="width: 50%;"></div></div>
+            </div>
+
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>MCV1</span>
+                <span class="text-red">30%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar red" style="width: 30%;"></div></div>
+            </div>
+
+            <div class="coverage-item">
+              <div class="item-info">
+                <span>MCV2</span>
+                <span class="text-orange">30%</span>
+              </div>
+              <div class="progress-bg"><div class="progress-bar orange" style="width: 30%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>
