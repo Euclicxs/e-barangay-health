@@ -1,5 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+  // 0. BHW OPERATOR ACCOUNTS — mula sa shared account store ng admin
+  const accountsBody = document.getElementById('bhwAccountsBody');
+  if (accountsBody && window.EBHStore) {
+    EBHStore.getUsers().forEach((user) => {
+      const isActive = user.status === 'active';
+      const row = document.createElement('tr');
+
+      const addCell = (text, cellClass, innerTag, innerClass) => {
+        const td = document.createElement('td');
+        if (cellClass) td.className = cellClass;
+        if (innerTag) {
+          const inner = document.createElement(innerTag);
+          if (innerClass) inner.className = innerClass;
+          inner.textContent = text;
+          td.appendChild(inner);
+        } else {
+          td.textContent = text;
+        }
+        row.appendChild(td);
+      };
+
+      addCell(user.id, 'text-muted');
+      addCell(user.fullName, '', 'strong');
+      addCell(user.purok);
+      addCell(user.role, '', 'span', 'badge-role cyan-role');
+      addCell(
+        isActive ? 'Active' : 'Inactive',
+        '',
+        'span',
+        `status-pill ${isActive ? 'active-pill' : 'inactive-pill'}`
+      );
+      addCell(user.lastLogin || '—', 'mono-text');
+      addCell('Managed in Admin Dashboard', 'text-muted');
+
+      accountsBody.appendChild(row);
+    });
+  }
+
+  const btnGoAdmin = document.getElementById('btnGoAdmin');
+  if (btnGoAdmin) {
+    btnGoAdmin.addEventListener('click', () => {
+      const session = window.EBHStore ? EBHStore.getSession() : null;
+      if (session && session.role === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+      }
+      alert('Only the administrator can add BHW accounts. Log in through the ADMIN button on the login page.');
+    });
+  }
+
   // 1. TOGGLE PASSWORD VISIBILITY
   const showPasswordToggle = document.getElementById('showPasswordToggle');
   const passwordInputs = document.querySelectorAll('#passwordForm input[type="password"], #passwordForm input[type="text"]');

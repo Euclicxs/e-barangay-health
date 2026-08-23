@@ -1,0 +1,119 @@
+/* ADMIN DASHBOARD — BHW ACCOUNT MANAGEMENT */
+
+.admin-stats {
+  margin-bottom: 20px;
+}
+
+.sec-card + .sec-card {
+  margin-top: 20px;
+}
+
+.empty-state {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+  padding: 16px 0 4px;
+}
+
+/* STATUS ACTION BUTTONS */
+.activate-btn {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.deactivate-btn {
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
+/* ADD BHW USER MODAL */
+.admin-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(5, 10, 20, 0.85);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.admin-modal-box {
+  background-color: var(--bg-card, #141c2e);
+  border: 1px solid var(--border-color, #1e293b);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 560px;
+  padding: 20px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-modal-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-close-modal:hover {
+  color: #ffffff;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+.admin-form-message {
+  font-size: 11px;
+  font-weight: 600;
+  min-height: 14px;
+  margin-top: 10px;
+  color: #4ade80;
+}
+
+.admin-form-message.is-error {
+  color: #f87171;
+}
+
+.admin-modal-actions {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.btn-outline-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color, #334155);
+  color: #ffffff;
+  padding: 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-outline-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}

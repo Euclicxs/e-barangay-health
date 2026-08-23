@@ -118,7 +118,7 @@
         <div class="sec-card">
           <div class="sec-card-header">
             <h3><i class="fa-solid fa-users text-purple"></i> BHW Operator Accounts</h3>
-            <button class="btn-add-bhw"><i class="fa-solid fa-plus"></i> Add BHW</button>
+            <button class="btn-add-bhw" id="btnGoAdmin"><i class="fa-solid fa-plus"></i> Add BHW</button>
           </div>
           
           <div class="table-responsive">
@@ -134,80 +134,7 @@
                   <th>ACTIONS</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td class="text-muted">USR-001</td>
-                  <td><strong>Maria Santos</strong></td>
-                  <td>Calachuchi</td>
-                  <td><span class="badge-role cyan-role">Registration Operator</span></td>
-                  <td><span class="status-pill active-pill">Active</span></td>
-                  <td class="mono-text">2026-08-07 08:14</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">USR-002</td>
-                  <td><strong>Leonora Cano</strong></td>
-                  <td>Calachuchi</td>
-                  <td><span class="badge-role cyan-role">Registration Operator</span></td>
-                  <td><span class="status-pill active-pill">Active</span></td>
-                  <td class="mono-text">2026-08-06 13:22</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">USR-003</td>
-                  <td><strong>Rosa dela Vega</strong></td>
-                  <td>Bougainvillea</td>
-                  <td><span class="badge-role cyan-role">Registration Operator</span></td>
-                  <td><span class="status-pill active-pill">Active</span></td>
-                  <td class="mono-text">2026-08-05 09:47</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">USR-004</td>
-                  <td><strong>Carmen Ilustre</strong></td>
-                  <td>Walingwaling</td>
-                  <td><span class="badge-role cyan-role">Registration Operator</span></td>
-                  <td><span class="status-pill active-pill">Active</span></td>
-                  <td class="mono-text">2026-08-04 10:30</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">USR-005</td>
-                  <td><strong>Glenda Torcuato</strong></td>
-                  <td>Santan</td>
-                  <td><span class="badge-role cyan-role">Registration Operator</span></td>
-                  <td><span class="status-pill inactive-pill">Inactive</span></td>
-                  <td class="mono-text">2026-08-03 14:55</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">ADM-001</td>
-                  <td><strong>Dr. Rosalinda Vidal</strong></td>
-                  <td>All Puroks</td>
-                  <td><span class="badge-role purple-role">Health Center Supervisor</span></td>
-                  <td><span class="status-pill active-pill">Active</span></td>
-                  <td class="mono-text">2026-08-07 07:02</td>
-                  <td class="action-cell">
-                    <button class="btn-action-outline edit-btn">Edit Role</button>
-                    <button class="btn-action-outline reset-btn">Reset PW</button>
-                  </td>
-                </tr>
-              </tbody>
+              <tbody id="bhwAccountsBody"></tbody>
             </table>
           </div>
         </div>
@@ -345,6 +272,7 @@
     </main>
   </div>
 
+  <script src="../js/store.js"></script>
   <script src="../js/security.js"></script>
 </body>
 </html>

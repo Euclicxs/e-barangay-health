@@ -28,16 +28,22 @@
     <form id="loginForm" class="login-form">
       <div class="input-box">
         <i class="fa-solid fa-id-card"></i>
-        <input type="text" placeholder="BHW ID / Username" required>
+        <input type="text" id="bhwUsername" placeholder="BHW ID / Username" required>
       </div>
 
       <div class="input-box">
         <i class="fa-solid fa-lock"></i>
-        <input type="password" placeholder="Password" required>
+        <input type="password" id="bhwPassword" placeholder="Password" required>
       </div>
+
+      <p class="form-message" id="loginMessage"></p>
 
       <button type="submit" class="btn-login">
         LOG IN <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+      <button type="button" id="btnOpenAdmin" class="btn-admin">
+        <i class="fa-solid fa-user-shield"></i> ADMIN
       </button>
 
       <div class="login-links">
@@ -49,13 +55,57 @@
     </form>
   </div>
 
+  <!-- ADMINISTRATOR LOG IN MODAL -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content admin-modal-content">
+      <div class="register-brand">
+        <div class="modal-logo">
+          <img src="../image/logo.png" alt="e-Barangay Logo" class="modal-png-logo">
+        </div>
+        <div>
+          <h3>e-BARANGAY <span>HEALTH SYSTEM</span></h3>
+          <p>Brgy. New Katipunan, Matanao, Davao Region</p>
+        </div>
+      </div>
+
+      <div class="modal-title-area">
+        <h2>ADMINISTRATOR LOG IN <span class="sub-tag">(BHW ACCOUNT MANAGEMENT)</span></h2>
+      </div>
+
+      <div class="admin-credential-box">
+        <p class="credential-title"><i class="fa-solid fa-key"></i> ONE AND ONLY ADMIN CREDENTIAL</p>
+        <p>Username: <strong id="adminHintUser">admin</strong></p>
+        <p>Password: <strong id="adminHintPass">ebrgy@admin2026</strong></p>
+      </div>
+
+      <form id="adminForm" class="login-form">
+        <div class="input-box">
+          <i class="fa-solid fa-user-shield"></i>
+          <input type="text" id="adminUsername" placeholder="Admin Username" required>
+        </div>
+
+        <div class="input-box">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="adminPassword" placeholder="Admin Password" required>
+        </div>
+
+        <p class="form-message" id="adminMessage"></p>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-create">LOG IN AS ADMINISTRATOR</button>
+          <button type="button" id="btnCancelAdmin" class="btn-cancel-modal">CANCEL / BACK TO LOGIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- REGISTER NEW BHW ACCOUNT MODAL -->
   <div id="registerModal" class="modal">
     <div class="modal-content">
       <div class="register-brand">
         <div class="modal-logo">
           <!-- PNG LOGO REPLACEMENT FOR MODAL -->
-          <img src="../images/logo.png" alt="e-Barangay Logo" class="modal-png-logo">
+          <img src="../image/logo.png" alt="e-Barangay Logo" class="modal-png-logo">
         </div>
         <div>
           <h3>e-BARANGAY <span>HEALTH SYSTEM</span></h3>
@@ -71,27 +121,27 @@
         <div class="register-grid">
           <div class="form-group">
             <label>Full Name</label>
-            <input type="text" placeholder="" required>
+            <input type="text" id="regFullName" placeholder="" required>
           </div>
 
           <div class="form-group">
             <label>Preferred Username (BHW ID)</label>
-            <input type="text" placeholder="" required>
+            <input type="text" id="regUsername" placeholder="" required>
           </div>
 
           <div class="form-group">
             <label>Date of Birth (MM/DD/YYYY)</label>
-            <input type="text" placeholder="MM/DD/YYYY" required>
+            <input type="text" id="regBirthDate" placeholder="MM/DD/YYYY" required>
           </div>
 
           <div class="form-group">
             <label>Secure Password</label>
-            <input type="password" placeholder="" required>
+            <input type="password" id="regPassword" placeholder="Min. 8 characters" required>
           </div>
 
           <div class="form-group">
             <label>Assigned Purok</label>
-            <select required>
+            <select id="regPurok" required>
               <option value="" disabled selected></option>
               <option value="Calachuchi">Purok Calachuchi</option>
               <option value="Bougainvillea">Purok Bougainvillea</option>
@@ -105,14 +155,16 @@
 
           <div class="form-group">
             <label>Confirm Password</label>
-            <input type="password" placeholder="" required>
+            <input type="password" id="regConfirmPassword" placeholder="" required>
           </div>
 
           <div class="form-group full-width">
             <label>Contact Number (PH)</label>
-            <input type="text" placeholder="" required>
+            <input type="text" id="regContact" placeholder="" required>
           </div>
         </div>
+
+        <p class="form-message" id="registerMessage"></p>
 
         <div class="modal-actions">
           <button type="submit" class="btn-create">CREATE ACCOUNT & START WORKING</button>
@@ -122,6 +174,7 @@
     </div>
   </div>
 
+  <script src="../js/store.js"></script>
   <script src="../js/login.js"></script>
 </body>
 </html>
