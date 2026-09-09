@@ -1,0 +1,28 @@
+{
+  "name": "e-barangay-health",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/logo-path-exploration.test.js && node tests/sidebar-structure-exploration.test.js && node tests/stat-card-modal-exploration.test.js && node tests/preservation-tests.test.js",
+    "test:bugfix": "node tests/logo-path-exploration.test.js && node tests/sidebar-structure-exploration.test.js && node tests/stat-card-modal-exploration.test.js && node tests/preservation-tests.test.js",
+    "test:exploration": "node tests/logo-path-exploration.test.js && node tests/sidebar-structure-exploration.test.js && node tests/stat-card-modal-exploration.test.js",
+    "test:preservation": "node tests/preservation-tests.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Euclicxs/e-barangay-health.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Euclicxs/e-barangay-health/issues"
+  },
+  "homepage": "https://github.com/Euclicxs/e-barangay-health#readme",
+  "devDependencies": {
+    "@fast-check/vitest": "^0.4.1",
+    "happy-dom": "^20.11.6",
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.11"
+  }
+}

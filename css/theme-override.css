@@ -1,0 +1,238 @@
+/*
+  theme-override.css
+  Loaded LAST on every BHW page.
+  Sets: white-toned main background, dark readable text,
+        consistent sidebar active highlight across all pages.
+*/
+
+/* ── APP SHELL ─────────────────────────────────────── */
+html, body {
+  background: #f1f5f9 !important;
+}
+
+/* ── MAIN CONTENT AREA ──────────────────────────────── */
+.main-content {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+/* ── TOP HEADER ─────────────────────────────────────── */
+.top-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Sidebar section dividers — visible on white */
+.sidebar .sidebar-header,
+.sidebar .brand {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.sidebar .sidebar-footer {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.location-tag {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.icon-btn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.time-display .time  { color: #0f172a !important; }
+.time-display .date  { color: #64748b !important; }
+
+/* ── PAGE TITLE SECTION ─────────────────────────────── */
+.dashboard-header h1,
+.module-header   h1,
+.page-header     h1,
+.page-title      h1,
+h1 {
+  color: #0f172a !important;
+}
+
+.dashboard-header p,
+.module-header   p,
+.page-header     p,
+.page-title      p {
+  color: #475569 !important;
+}
+
+/* ── FILTER BAR ─────────────────────────────────────── */
+.filter-bar {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.target-month-badge {
+  background: rgba(245,158,11,0.12) !important;
+  color: #b45309 !important;
+}
+
+.input-search,
+.select-purok,
+.filter-bar select,
+.filter-bar input {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.input-search::placeholder,
+.filter-bar input::placeholder { color: #94a3b8 !important; }
+
+.status-summary .text-red    { color: #dc2626 !important; }
+.status-summary .text-yellow { color: #b45309 !important; }
+.status-summary .text-green  { color: #15803d !important; }
+
+/* ── DATA TABLE ─────────────────────────────────────── */
+.table-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.data-table th {
+  background: #f8fafc !important;
+  color: #374151 !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.data-table td {
+  color: #1e293b !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.data-table td strong { color: #0f172a !important; }
+
+.data-table tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+/* ── CARDS ──────────────────────────────────────────── */
+.content-card,
+.modal-content {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+/* ── SIDEBAR — light/white theme matching main content ── */
+.sidebar {
+  background: #ffffff !important;
+  border-right: 2px solid #e2e8f0 !important;
+}
+
+/* Brand text */
+.sidebar .brand-text h2           { color: #0f172a !important; }
+.sidebar .brand-text h2 span      { color: #06b6d4 !important; }
+.sidebar .brand-text p            { color: #64748b !important; }
+
+/* Section labels */
+.sidebar .menu-title {
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+}
+
+/* All menu links default */
+.sidebar .menu-list li a,
+.sidebar .menu-list a {
+  color: #334155 !important;
+  background: transparent !important;
+  border-left: 3px solid transparent !important;
+}
+
+.sidebar .menu-list li a i { color: #64748b !important; }
+
+/* Remove old border/box-shadow from earlier rules */
+.sidebar .menu-list li {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Hover */
+.sidebar .menu-list li:not(.active):hover a,
+.sidebar .menu-list li:not(.active) a:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-left-color: #06b6d4 !important;
+}
+
+.sidebar .menu-list li:not(.active):hover a i,
+.sidebar .menu-list li:not(.active) a:hover i {
+  color: #06b6d4 !important;
+}
+
+/* ★ ACTIVE — one definition, wins on every page ★ */
+.sidebar .menu-list li.active {
+  background: #e0f7fa !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.sidebar .menu-list li.active a {
+  background: transparent !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border-left-color: #06b6d4 !important;
+}
+
+.sidebar .menu-list li.active a i {
+  color: #06b6d4 !important;
+}
+
+/* Badges */
+.sidebar .badge-red  {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.sidebar .badge-cyan {
+  background: #cffafe !important;
+  color: #0891b2 !important;
+}
+
+/* User profile */
+.sidebar .user-profile {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+}
+
+.sidebar .avatar {
+  background: linear-gradient(135deg, #06b6d4, #0ea5e9) !important;
+  color: #ffffff !important;
+}
+
+.sidebar .user-info h4,
+.sidebar #userNameDisplay {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+/* Logout */
+.sidebar .btn-logout {
+  background: #fee2e2 !important;
+  border: 1px solid #fecaca !important;
+  color: #dc2626 !important;
+}
+
+.sidebar .btn-logout:hover {
+  background: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+.sidebar .btn-logout i {
+  color: #dc2626 !important;
+}

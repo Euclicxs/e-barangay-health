@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Test - Stat Card Click Handlers</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1e293b;
+    }
+    .instructions {
+      background: #e0f2fe;
+      border-left: 4px solid #0891b2;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .result {
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+    .success {
+      color: #15803d;
+      font-weight: bold;
+    }
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🔍 Manual Test - Dashboard Stat Card Click Handlers</h1>
+    
+    <div class="instructions">
+      <strong>Instructions:</strong><br>
+      1. Open this file in a browser<br>
+      2. Open the browser console (F12)<br>
+      3. Click the "Open Dashboard" button below<br>
+      4. Try clicking each of the 4 stat cards<br>
+      5. Verify that modals open when stat cards are clicked
+    </div>
+
+    <div id="testResults"></div>
+
+    <button onclick="openDashboard()" style="background: #06b6d4; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600;">
+      Open Dashboard in New Tab
+    </button>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>Expected Behavior</h2>
+    <ul>
+      <li>✅ Clicking "Total Child Records" stat card should open a modal with table data</li>
+      <li>✅ Clicking "Overdue Immunizations" stat card should open a modal with overdue records</li>
+      <li>✅ Clicking "Due This Month" stat card should open a modal with upcoming visits</li>
+      <li>✅ Clicking "Completed Visits" stat card should open a modal with completed visits</li>
+      <li>✅ All modals should display with populated data tables</li>
+      <li>✅ Close buttons (X and footer button) should close modals</li>
+    </ul>
+
+    <h2>Test Results</h2>
+    <div id="testLog" class="result">
+      Waiting for manual testing...<br>
+      Please open the dashboard and test the stat card clicks.
+    </div>
+
+    <script>
+      function openDashboard() {
+        const dashboardUrl = '../html/dashboard.html';
+        const testWindow = window.open(dashboardUrl, '_blank');
+        
+        // Log the test start
+        document.getElementById('testLog').innerHTML = `
+          <span class="success">✓ Dashboard opened in new tab</span><br>
+          <br>
+          Now test the following:<br>
+          1. Click each stat card (blue, red, yellow, green)<br>
+          2. Verify modal opens and displays data<br>
+          3. Verify close button works<br>
+          4. Test all 4 stat cards<br>
+          <br>
+          <strong>Check browser console for any errors</strong>
+        `;
+      }
+
+      // Display system info
+      document.getElementById('testResults').innerHTML = `
+        <div class="result">
+          <strong>Test Environment:</strong><br>
+          Browser: ${navigator.userAgent}<br>
+          Test File: ${window.location.pathname}<br>
+          Dashboard Path: ../html/dashboard.html
+        </div>
+      `;
+    </script>
+  </div>
+</body>
+</html>

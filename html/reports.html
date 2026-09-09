@@ -8,93 +8,83 @@
   <link rel="stylesheet" href="../css/reports.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="../css/theme-override.css">
 </head>
 <body>
 
   <div class="app-container">
     <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">
-          <img src="../image/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+        <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
-          <h2>e-Barangay <span>Health</span></h2>
+          <h2>E-Barangay <span>Health</span></h2>
           <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
         </div>
       </div>
+    <div class="menu-section">
+      <span class="menu-title">MAIN MENU</span>
+      <ul class="menu-list">
+        <li>
+          <a href="dashboard.html">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span>Dashboard Overview</span>
+          </a>
+        </li>
+        <li>
+          <a href="child.html">
+            <i class="fa-solid fa-syringe"></i>
+            <span>Child Immunization</span>
+          </a>
+          <span class="badge badge-red">3</span>
+        </li>
+        <li>
+          <a href="maternal.html">
+            <i class="fa-solid fa-person-pregnant"></i>
+            <span>Maternal / Prenatal</span>
+          </a>
+          <span class="badge badge-red">2</span>
+        </li>
+      </ul>
+    </div>
 
-      <div class="menu-section">
-        <span class="menu-title">MAIN MENU</span>
-        <ul class="menu-list">
-          <li>
-            <a href="dashboard.html">
-              <i class="fa-solid fa-table-cells-large"></i>
-              <span>Dashboard Overview</span>
-            </a>
-          </li>
-          <li>
-            <a href="child.html">
-              <i class="fa-solid fa-syringe"></i>
-              <span>Child Immunization</span>
-            </a>
-            <span class="badge badge-red">3</span>
-          </li>
-          <li>
-            <a href="maternal.html">
-              <i class="fa-solid fa-person-pregnant"></i>
-              <span>Maternal / Prenatal</span>
-            </a>
-            <span class="badge badge-red">2</span>
-          </li>
-        </ul>
-      </div>
+    <div class="menu-section">
+      <span class="menu-title">MANAGEMENT</span>
+      <ul class="menu-list">
+        <li>
+          <a href="purok.html">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Purok Masterlists</span>
+          </a>
+        </li>
+        <li>
+          <a href="reports.html">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Reports & Exports</span>
+          </a>
+        </li>
+        
+      </ul>
+    </div>
 
-      <div class="menu-section">
-        <span class="menu-title">MANAGEMENT</span>
-        <ul class="menu-list">
-          <li>
-            <a href="purok.html">
-              <i class="fa-solid fa-clipboard-list"></i>
-              <span>Purok Masterlists</span>
-            </a>
-          </li>
-          <li class="active">
-            <a href="reports.html">
-              <i class="fa-solid fa-chart-line"></i>
-              <span>Reports & Exports</span>
-            </a>
-          </li>
-          <li>
-            <a href="security.html">
-              <i class="fa-solid fa-user-lock"></i>
-              <span>Security Settings</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div class="sidebar-footer">
-        <div class="user-profile">
-          <div class="avatar">M</div>
-          <div class="user-info">
-            <h4>Maria Santos</h4>
-            <p>BHW · Purok Calachuchi</p>
-          </div>
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="avatar" id="userAvatar"></div>
+        <div class="user-info">
+          <h4 id="userNameDisplay"></h4>
         </div>
-        <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
       </div>
-    </aside>
+      <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
+    </div>
+  </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
       <!-- TOP NAVIGATION HEADER -->
       <header class="top-header">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search patient name or record ID...">
-        </div>
-        <div class="header-right">
+        <div class="header-right" style="margin-left: auto;">
           <div class="location-tag">
             <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
           </div>
@@ -141,9 +131,9 @@
             </div>
           </div>
           <div class="report-stats-list">
-            <p>• Total Households Covered: <strong>120</strong></p>
-            <p>• Children Immunized This Month: <strong>10</strong></p>
-            <p>• Pregnant Mothers Checked: <strong>8</strong></p>
+            <p>? Total Households Covered: <strong>120</strong></p>
+            <p>? Children Immunized This Month: <strong>10</strong></p>
+            <p>? Pregnant Mothers Checked: <strong>8</strong></p>
           </div>
           <div class="report-actions">
             <button class="btn-report-action btn-cyan-fill"><i class="fa-solid fa-download"></i> Download Monthly Summary (PDF)</button>
@@ -185,9 +175,9 @@
             </div>
           </div>
           <div class="report-stats-list monospace-stats">
-            <p>• <strong>18</strong> total visits</p>
-            <p>• <strong>2</strong> BHWs active</p>
-            <p>• Coverage: <strong class="text-purple">100%</strong></p>
+            <p>? <strong>18</strong> total visits</p>
+            <p>? <strong>2</strong> BHWs active</p>
+            <p>? Coverage: <strong class="text-purple">100%</strong></p>
           </div>
           <div class="report-actions">
             <button class="btn-report-action btn-purple-fill"><i class="fa-solid fa-download"></i> Download PDF Report</button>
@@ -211,8 +201,8 @@
             <canvas id="purokBarChart"></canvas>
           </div>
           <div class="chart-legend">
-            <span><span class="legend-box bg-green"></span> ≥80% Complete</span>
-            <span><span class="legend-box bg-yellow"></span> 50–79%</span>
+            <span><span class="legend-box bg-green"></span> =80% Complete</span>
+            <span><span class="legend-box bg-yellow"></span> 50?79%</span>
             <span><span class="legend-box bg-red"></span> &lt;50% Concern</span>
           </div>
         </div>
@@ -244,6 +234,8 @@
     </main>
   </div>
 
+  <script src="../js/navigation.js"></script>
+  <script src="../js/session.js"></script>
   <script src="../js/reports.js"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 :root {
-  --bg-main: #0b1120;
-  --bg-card: #141c2e;
-  --border-color: #1e293b;
-  --text-main: #e2e8f0;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: #1e293b;
   --text-muted: #64748b;
   --accent-blue: #0284c7;
   --accent-cyan: #06b6d4;
@@ -37,7 +37,7 @@ body {
   width: 100%;
   height: 100%;
   background: radial-gradient(circle at center, rgba(15, 23, 42, 0.75) 0%, rgba(11, 17, 32, 0.95) 100%),
-              url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1920&q=80');
+              url('../assets/bg.jpg');
   background-size: cover;
   background-position: center;
   filter: blur(4px);
@@ -168,29 +168,19 @@ body {
   margin-top: 15px;
 }
 
-.forgot-link {
-  color: #94a3b8;
-  font-size: 12px;
-  text-decoration: none;
-}
-
-.forgot-link:hover {
-  color: #ffffff;
-}
-
-.register-link {
+.admin-link {
   background: transparent;
   border: none;
-  color: #38bdf8;
+  color: #0284c7;
   font-size: 12px;
   cursor: pointer;
   text-decoration: none;
   transition: 0.2s;
 }
 
-.register-link:hover {
+.admin-link:hover {
   text-decoration: underline;
-  color: #7dd3fc;
+  color: #0284c7;
 }
 
 /* ================= MODAL STYLES (REGISTER BHW) ================= */
@@ -348,4 +338,39 @@ body {
 
 .btn-cancel-modal:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* ================= ADMIN LOGIN FORM STYLES ================= */
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-login-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-login-form .form-group label {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.admin-login-form .form-group input {
+  background-color: #0d1527;
+  border: 1px solid #2e3d59;
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.admin-login-form .form-group input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
 }

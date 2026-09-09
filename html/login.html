@@ -17,9 +17,9 @@
     <div class="brand-header">
       <div class="system-logo">
         <!-- PNG LOGO REPLACEMENT -->
-        <img src="../image/logo.png" alt="e-Barangay Logo" class="brand-png-logo">
+        <img src="../assets/logo.png" alt="e-Barangay Logo" class="brand-png-logo">
       </div>
-      <h1>e-BARANGAY <span>HEALTH SYSTEM</span></h1>
+      <h1>E-BARANGAY <span>HEALTH SYSTEM</span></h1>
       <p class="location-sub">Brgy. New Katipunan, Matanao, Davao Region</p>
     </div>
 
@@ -41,87 +41,51 @@
       </button>
 
       <div class="login-links">
-        <a href="#" class="forgot-link">Forgot Password?</a>
-        <button type="button" id="btnOpenRegister" class="register-link">
-          Register New BHW Account
+        <button type="button" id="btnOpenAdmin" class="admin-link">
+          Admin
         </button>
       </div>
     </form>
   </div>
 
-  <!-- REGISTER NEW BHW ACCOUNT MODAL -->
-  <div id="registerModal" class="modal">
+  <!-- ADMIN LOGIN MODAL -->
+  <div id="adminModal" class="modal">
     <div class="modal-content">
       <div class="register-brand">
         <div class="modal-logo">
-          <!-- PNG LOGO REPLACEMENT FOR MODAL -->
-          <img src="../images/logo.png" alt="e-Barangay Logo" class="modal-png-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="modal-png-logo">
         </div>
         <div>
-          <h3>e-BARANGAY <span>HEALTH SYSTEM</span></h3>
+          <h3>E-BARANGAY <span>HEALTH SYSTEM</span></h3>
           <p>Brgy. New Katipunan, Matanao, Davao Region</p>
         </div>
       </div>
 
       <div class="modal-title-area">
-        <h2>CREATE NEW BHW ACCOUNT <span class="sub-tag">(QUICK & EASY REGISTRATION)</span></h2>
+        <h2>ADMIN LOGIN <span class="sub-tag">(SYSTEM MANAGEMENT)</span></h2>
       </div>
 
-      <form id="registerForm" class="register-form">
-        <div class="register-grid">
-          <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" placeholder="" required>
-          </div>
+      <form id="adminLoginForm" class="admin-login-form">
+        <div class="form-group">
+          <label>Admin Username</label>
+          <input type="text" id="adminUsername" placeholder="Enter admin username" required>
+        </div>
 
-          <div class="form-group">
-            <label>Preferred Username (BHW ID)</label>
-            <input type="text" placeholder="" required>
-          </div>
-
-          <div class="form-group">
-            <label>Date of Birth (MM/DD/YYYY)</label>
-            <input type="text" placeholder="MM/DD/YYYY" required>
-          </div>
-
-          <div class="form-group">
-            <label>Secure Password</label>
-            <input type="password" placeholder="" required>
-          </div>
-
-          <div class="form-group">
-            <label>Assigned Purok</label>
-            <select required>
-              <option value="" disabled selected></option>
-              <option value="Calachuchi">Purok Calachuchi</option>
-              <option value="Bougainvillea">Purok Bougainvillea</option>
-              <option value="Walingwaling">Purok Walingwaling</option>
-              <option value="Sampaguita">Purok Sampaguita</option>
-              <option value="Santan">Purok Santan</option>
-              <option value="Rose">Purok Rose</option>
-              <option value="Daisy">Purok Daisy</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Confirm Password</label>
-            <input type="password" placeholder="" required>
-          </div>
-
-          <div class="form-group full-width">
-            <label>Contact Number (PH)</label>
-            <input type="text" placeholder="" required>
-          </div>
+        <div class="form-group">
+          <label>Admin Password</label>
+          <input type="password" id="adminPassword" placeholder="Enter admin password" required>
         </div>
 
         <div class="modal-actions">
-          <button type="submit" class="btn-create">CREATE ACCOUNT & START WORKING</button>
-          <button type="button" id="btnCancelRegister" class="btn-cancel-modal">CANCEL / BACK TO LOGIN</button>
+          <button type="submit" class="btn-create">LOGIN TO ADMIN PANEL</button>
+          <button type="button" id="btnCancelAdmin" class="btn-cancel-modal">CANCEL / BACK TO LOGIN</button>
         </div>
       </form>
     </div>
   </div>
 
+  <script src="../js/credentials.js"></script>
+  <script src="../js/session.js"></script>
   <script src="../js/login.js"></script>
 </body>
 </html>

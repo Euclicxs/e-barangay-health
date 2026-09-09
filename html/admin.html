@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - e-Barangay Health System</title>
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- SIDEBAR CONTAINER -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+        </div>
+        <div class="brand-text">
+          <h2>E-Barangay <span>Health</span></h2>
+          <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <span class="menu-title">ADMIN MENU</span>
+        <ul class="menu-list">
+          <li class="active">
+            <a href="admin.html">
+              <i class="fa-solid fa-user-shield"></i>
+              <span>User Management</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link" data-section="login-history">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>Login History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar admin-avatar">A</div>
+          <div class="user-info">
+            <h4 id="adminUserName">System Administrator</h4>
+            <p id="adminUserRole">Admin Access</p>
+          </div>
+        </div>
+        <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
+      </div>
+    </aside>
+
+    <!-- MAIN ADMIN CONTENT -->
+    <main class="main-content">
+      <!-- TOP NAVIGATION HEADER -->
+      <header class="top-header">
+        <div class="search-bar">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchUsers" placeholder="Search BHW users...">
+        </div>
+        <div class="header-right">
+          <div class="location-tag">
+            <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
+          </div>
+          <div class="icon-btn"><i class="fa-solid fa-bell"></i></div>
+          <div class="time-display">
+            <span class="time" id="clock-time">08:52:37 PM</span>
+            <span class="date" id="clock-date">Fri, Aug 7, 2026</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- USER MANAGEMENT SECTION -->
+      <section id="user-management-section" class="content-section active">
+        <div class="section-header">
+          <h1><i class="fa-solid fa-user-shield"></i> User Management</h1>
+          <p>Manage Barangay Health Worker accounts and access permissions</p>
+          <button class="btn-primary" id="btnAddUser">
+            <i class="fa-solid fa-plus"></i> Add New BHW Account
+          </button>
+        </div>
+
+        <!-- STATS CARDS -->
+        <div class="admin-stats-grid">
+          <div class="stat-card admin-blue">
+            <h2 id="totalUsers">0</h2>
+            <h3>Total BHW Accounts</h3>
+            <p>Registered users</p>
+          </div>
+          <div class="stat-card admin-green">
+            <h2 id="activeUsers">0</h2>
+            <h3>Active Accounts</h3>
+            <p>Currently active</p>
+          </div>
+          <div class="stat-card admin-red">
+            <h2 id="inactiveUsers">0</h2>
+            <h3>Inactive Accounts</h3>
+            <p>Deactivated users</p>
+          </div>
+          <div class="stat-card admin-yellow">
+            <h2 id="recentLogins">0</h2>
+            <h3>Recent Logins (24h)</h3>
+            <p>Last 24 hours</p>
+          </div>
+        </div>
+
+        <!-- USERS TABLE -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-users"></i> BHW Accounts</h3>
+            <div class="table-filters">
+              <select id="filterStatus">
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>BHW ID</th>
+                  <th>Name</th>
+                  <th>Contact Number</th>
+                  <th>Date of Birth</th>
+                  <th>Status</th>
+                  <th>Last Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- User rows will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGIN HISTORY SECTION -->
+      <section id="login-history-section" class="content-section">
+        <div class="section-header">
+          <h1><i class="fa-solid fa-clock-rotate-left"></i> Login History</h1>
+          <p>Monitor recent BHW access and login activity</p>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-list"></i> Recent Login Activity</h3>
+            <div class="history-filters">
+              <select id="historyFilter">
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>BHW Name</th>
+                  <th>BHW ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- History rows will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ADD/EDIT USER MODAL -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="userModalTitle">Add New BHW Account</h2>
+        <button class="btn-close-modal" id="btnCloseUserModal">&times;</button>
+      </div>
+      
+      <form id="userForm" class="user-form">
+        <input type="hidden" id="editUserId">
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="userFirstName" required>
+          </div>
+
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="userLastName" required>
+          </div>
+
+          <div class="form-group">
+            <label>Middle Initial (Optional)</label>
+            <input type="text" id="userMiddleInitial" maxlength="1">
+          </div>
+
+          <div class="form-group">
+            <label>Contact Number</label>
+            <input type="text" id="userContact" required>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Date of Birth</label>
+            <input type="date" id="userDob" required>
+          </div>
+        </div>
+
+        <!-- Credentials Display Section (shown for existing users) -->
+        <div id="credentialsSection" class="credentials-section" style="display: none;">
+          <div class="credentials-info">
+            <h4><i class="fa-solid fa-key"></i> Login Credentials</h4>
+            <div class="credential-item">
+              <span>BHW ID:</span>
+              <strong id="displayBhwId">-</strong>
+            </div>
+            <div class="credential-item">
+              <span>Password:</span>
+              <strong id="displayPassword">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Save Account</button>
+          <button type="button" class="btn-secondary" id="btnCancelUserModal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h2>Confirm Delete</h2>
+        <button class="btn-close-modal" id="btnCloseDeleteModal">&times;</button>
+      </div>
+      
+      <div class="delete-content">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <p>Are you sure you want to delete this BHW account? This action cannot be undone.</p>
+        <p><strong id="deleteUserName"></strong></p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-danger" id="btnConfirmDelete">Delete Account</button>
+        <button class="btn-secondary" id="btnCancelDeleteModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/credentials.js"></script>
+  <script src="../js/session.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

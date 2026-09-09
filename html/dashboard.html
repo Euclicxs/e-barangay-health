@@ -6,6 +6,7 @@
   <title>Dashboard Overview - e-Barangay Health</title>
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/theme-override.css">
 </head>
 <body>
 
@@ -14,17 +15,17 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <img src="../image/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
-          <h2>e-Barangay <span>Health</span></h2>
+          <h2>E-Barangay <span>Health</span></h2>
           <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
         </div>
       </div>
     <div class="menu-section">
       <span class="menu-title">MAIN MENU</span>
       <ul class="menu-list">
-        <li class="active">
+        <li>
           <a href="dashboard.html">
             <i class="fa-solid fa-table-cells-large"></i>
             <span>Dashboard Overview</span>
@@ -62,21 +63,15 @@
             <span>Reports & Exports</span>
           </a>
         </li>
-        <li>
-          <a href="security.html">
-            <i class="fa-solid fa-user-lock"></i>
-            <span>Security Settings</span>
-          </a>
-        </li>
+        
       </ul>
     </div>
 
     <div class="sidebar-footer">
       <div class="user-profile">
-        <div class="avatar">M</div>
+        <div class="avatar" id="userAvatar"></div>
         <div class="user-info">
-          <h4>Maria Santos</h4>
-          <p>BHW · Purok Calachuchi</p>
+          <h4 id="userNameDisplay"></h4>
         </div>
       </div>
       <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
@@ -87,11 +82,7 @@
   <main class="main-content">
     <!-- TOP NAVIGATION HEADER -->
     <header class="top-header">
-      <div class="search-bar">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search patient name or record ID...">
-      </div>
-      <div class="header-right">
+      <div class="header-right" style="margin-left: auto;">
         <div class="location-tag">
           <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
         </div>
@@ -106,26 +97,26 @@
       <!-- DASHBOARD STATS OVERVIEW -->
       <section class="dashboard-header">
         <h1>Dashboard Overview</h1>
-        <p>Summary of health records for Brgy. New Katipunan, Matanao — August 2026</p>
+        <p>Summary of health records for Brgy. New Katipunan, Matanao</p>
       </section>
 
       <section class="stats-grid">
-        <div class="stat-card blue">
+        <div class="stat-card blue" style="cursor: pointer;" data-modal="total-records">
           <h2>10</h2>
           <h3>Total Child Records</h3>
           <p>Active in logbook</p>
         </div>
-        <div class="stat-card red">
+        <div class="stat-card red" style="cursor: pointer;" data-modal="overdue">
           <h2>5</h2>
           <h3>Overdue Immunizations</h3>
-          <p>3 child · 2 maternal</p>
+          <p>3 child ? 2 maternal</p>
         </div>
-        <div class="stat-card yellow">
+        <div class="stat-card yellow" style="cursor: pointer;" data-modal="due-this-month">
           <h2>3</h2>
           <h3>Due This Month</h3>
           <p>Upcoming child visits</p>
         </div>
-        <div class="stat-card green">
+        <div class="stat-card green" style="cursor: pointer;" data-modal="completed">
           <h2>4</h2>
           <h3>Completed Visits</h3>
           <p>Child visits this month</p>
@@ -143,23 +134,23 @@
             <li>
               <div>
                 <strong>Sofia Marie Reyes</strong>
-                <span>Purok Walingwaling · 2 mos · Female</span>
+                <span>Purok Walingwaling ? 2 mos ? Female</span>
               </div>
-              <span class="status-pill status-red">• Overdue</span>
+              <span class="status-pill status-red">? Overdue</span>
             </li>
             <li>
               <div>
                 <strong>Ethan James Fernandez</strong>
-                <span>Purok Sampaguita · 8 mos · Male</span>
+                <span>Purok Sampaguita ? 8 mos ? Male</span>
               </div>
-              <span class="status-pill status-green">• Completed</span>
+              <span class="status-pill status-green">? Completed</span>
             </li>
             <li>
               <div>
                 <strong>Isabella Rose Villanueva</strong>
-                <span>Purok Santan · 3 mos · Female</span>
+                <span>Purok Santan ? 3 mos ? Female</span>
               </div>
-              <span class="status-pill status-red">• Overdue</span>
+              <span class="status-pill status-red">? Overdue</span>
             </li>
           </ul>
         </div>
@@ -173,23 +164,23 @@
             <li>
               <div>
                 <strong>Rosario Blanca Torres</strong>
-                <span>Purok Walingwaling · BP: 120/80</span>
+                <span>Purok Walingwaling ? BP: 120/80</span>
               </div>
-              <span class="status-pill status-green">• Completed</span>
+              <span class="status-pill status-green">? Completed</span>
             </li>
             <li>
               <div>
                 <strong>Cristina Mae Navarro</strong>
-                <span>Purok Sampaguita · BP: 140/90</span>
+                <span>Purok Sampaguita ? BP: 140/90</span>
               </div>
-              <span class="status-pill status-red">• Overdue</span>
+              <span class="status-pill status-red">? Overdue</span>
             </li>
             <li>
               <div>
                 <strong>Analiza Joy Soriano</strong>
-                <span>Purok Santan · BP: 115/75</span>
+                <span>Purok Santan ? BP: 115/75</span>
               </div>
-              <span class="status-pill status-yellow">• Due This Month</span>
+              <span class="status-pill status-yellow">? Due This Month</span>
             </li>
           </ul>
         </div>
@@ -200,7 +191,7 @@
         <!-- PUROK BREAKDOWN -->
         <div class="content-card">
           <div class="card-header">
-            <h3><i class="fa-solid fa-location-dot text-cyan"></i> Purok Breakdown — Children</h3>
+            <h3><i class="fa-solid fa-location-dot text-cyan"></i> Purok Breakdown ? Children</h3>
           </div>
           <div class="breakdown-list">
             <div class="breakdown-item">
@@ -329,6 +320,142 @@
     </main>
   </div>
 
+    
+  <!-- STAT CARD MODALS -->
+  <div id="totalRecordsModal" class="modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" style="background: #3b82f6;"><i class="fa-solid fa-clipboard-list"></i></div>
+          <div>
+            <h2>Total Child Records</h2>
+            <p>All active child immunization records</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" data-close="totalRecordsModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>CHILD NAME</th>
+                <th>AGE / SEX</th>
+                <th>PUROK</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="totalRecordsTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" data-close="totalRecordsModal"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overdueModal" class="modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" style="background: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <h2>Overdue Immunizations</h2>
+            <p>Children and mothers with overdue visits</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" data-close="overdueModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>PATIENT NAME</th>
+                <th>TYPE</th>
+                <th>AGE / SEX</th>
+                <th>PUROK</th>
+                <th>OVERDUE BY</th>
+              </tr>
+            </thead>
+            <tbody id="overdueTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" data-close="overdueModal"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dueThisMonthModal" class="modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" style="background: #f59e0b;"><i class="fa-solid fa-calendar-days"></i></div>
+          <div>
+            <h2>Due This Month</h2>
+            <p>Upcoming child immunization visits</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" data-close="dueThisMonthModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>CHILD NAME</th>
+                <th>AGE / SEX</th>
+                <th>PUROK</th>
+                <th>DUE DATE</th>
+              </tr>
+            </thead>
+            <tbody id="dueThisMonthTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" data-close="dueThisMonthModal"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="completedModal" class="modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" style="background: #22c55e;"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <h2>Completed Visits</h2>
+            <p>Child visits completed this month</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" data-close="completedModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>CHILD NAME</th>
+                <th>AGE / SEX</th>
+                <th>PUROK</th>
+                <th>VISIT DATE</th>
+              </tr>
+            </thead>
+            <tbody id="completedTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" data-close="completedModal"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+      </div>
+    </div>
+  </div>
+<script src="../js/navigation.js"></script>
+  <script src="../js/session.js"></script>
   <script src="../js/dashboard.js"></script>
 </body>
 </html>

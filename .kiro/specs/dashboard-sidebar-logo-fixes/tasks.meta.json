@@ -1,0 +1,284 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Write bug condition exploration tests for stat card click handling": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232171
+      },
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581244452
+      },
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581919049
+      }
+    ],
+    "2. Write bug condition exploration tests for sidebar HTML structure": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232283
+      },
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581930121
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582608019
+      }
+    ],
+    "3. Write bug condition exploration tests for logo image paths": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232388
+      },
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581931967
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582608667
+      }
+    ],
+    "4. Write preservation property tests (BEFORE implementing fixes)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232500
+      },
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581932685
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582867924
+      }
+    ],
+    "5.1 Fix dashboard stat card click handlers (Bug 1)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232615
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582875164
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583504451
+      }
+    ],
+    "5.2 Fix sidebar HTML structure in child.html (Bug 2)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232693
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582876332
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583505394
+      }
+    ],
+    "5.3 Fix logo path in child.html (Bug 3)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232759
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582877253
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583506261
+      }
+    ],
+    "5.4 Fix sidebar HTML structure in maternal.html (Bug 2)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232812
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582878289
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583507106
+      }
+    ],
+    "5.5 Fix logo path in maternal.html (Bug 3)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581232879
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788582879306
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583508051
+      }
+    ],
+    "5.6 Fix sidebar HTML structure in purok.html (Bug 2)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233017
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583516260
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583621838
+      }
+    ],
+    "5.7 Fix logo path in purok.html (Bug 3)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233100
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583517275
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583622738
+      }
+    ],
+    "5.8 Verify bug condition exploration tests now pass (Bug 1)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233191
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583630340
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584291990
+      }
+    ],
+    "5.9 Verify bug condition exploration tests now pass (Bug 2)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233281
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583630986
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584291481
+      }
+    ],
+    "5.10 Verify bug condition exploration tests now pass (Bug 3)": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233357
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583631867
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584294209
+      }
+    ],
+    "5.11 Verify preservation tests still pass": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233454
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788583632840
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584293144
+      }
+    ],
+    "6. Checkpoint - Manual testing and verification": [
+      {
+        "executionId": "33e37330-c5ef-439f-8004-9f852cf67b0d",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788581233597
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584303493
+      },
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584313595
+      }
+    ],
+    "5. Implement fixes for all three bugs": [
+      {
+        "executionId": "ca1ac174-34c2-45bb-a32b-8d198e3b3802",
+        "chatSessionId": "sess_cf21009b-f7ec-4d81-b8c1-da5b26f2cd4e",
+        "timestamp": 1788584294366
+      }
+    ]
+  }
+}

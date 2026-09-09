@@ -6,15 +6,16 @@
   <title>Child Immunization - e-Barangay Health</title>
   <link rel="stylesheet" href="../css/child.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/theme-override.css">
 </head>
 <body>
 
   <div class="app-container">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">
-          <img src="../image/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
           <h2>e-Barangay <span>Health</span></h2>
@@ -41,17 +42,14 @@
         <span class="menu-title">MANAGEMENT</span>
         <ul class="menu-list">
           <li><a href="purok.html"><i class="fa-solid fa-clipboard-list"></i> Purok Masterlists</a></li>
-          <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Reports & Exports</a></li>
-          <li><a href="security.html"><i class="fa-solid fa-user-lock"></i> Security Settings</a></li>
-        </ul>
+          <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Reports & Exports</a></li>        </ul>
       </div>
 
       <div class="sidebar-footer">
         <div class="user-profile">
-          <div class="avatar">M</div>
+          <div class="avatar" id="userAvatar"></div>
           <div class="user-info">
-            <h4>Maria Santos</h4>
-            <p>BHW · Purok Calachuchi</p>
+            <h4 id="userNameDisplay"></h4>
           </div>
         </div>
         <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
@@ -62,11 +60,7 @@
     <main class="main-content">
       <!-- TOP HEADER -->
       <header class="top-header">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search patient name or record ID...">
-        </div>
-        <div class="header-right">
+        <div class="header-right" style="margin-left: auto;">
           <div class="location-tag">
             <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
           </div>
@@ -76,16 +70,16 @@
             <span class="date" id="clock-date">Sun, Aug 9, 2026</span>
           </div>
         </div>
-      </header>
+        </header>
 
       <!-- MODULE HEADER -->
-      <div class="module-header">
+      <section class="dashboard-header">
         <div>
           <h1><i class="fa-solid fa-syringe text-cyan"></i> Child Immunization Records</h1>
           <p>Complete list of pediatric immunization schedules and status</p>
         </div>
         <button class="btn-primary" id="btnEncodeVisit"><i class="fa-solid fa-plus"></i> Encode Visit</button>
-      </div>
+      </section>
 
       <!-- FILTER BAR -->
       <div class="filter-bar">
@@ -137,7 +131,7 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>KLINT KERVIN PANERIO</strong><br><small class="text-muted">CHD-001</small></td>
+              <td><strong>KLINT KERVIN PANERIO</strong></td>
               <td>4 mos<br><span class="text-male">Male</span></td>
               <td>Calachuchi</td>
               <td>12.3</td>
@@ -160,7 +154,7 @@
             </tr>
 
             <tr>
-              <td><strong>LIAM JAMES TAMAY</strong><br><small class="text-muted">CHD-002</small></td>
+              <td><strong>LIAM JAMES TAMAY</strong></td>
               <td>6 mos<br><span class="text-male">Male</span></td>
               <td>Bougainvillea</td>
               <td>8.5</td>
@@ -183,7 +177,7 @@
             </tr>
 
             <tr>
-              <td><strong>AMARAH BASTATAS</strong><br><small class="text-muted">CHD-003</small></td>
+              <td><strong>AMARAH BASTATAS</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>5.5</td>
@@ -206,7 +200,7 @@
             </tr>
 
             <tr>
-              <td><strong>LUKA BENAVENTE</strong><br><small class="text-muted">CHD-004</small></td>
+              <td><strong>LUKA BENAVENTE</strong></td>
               <td>2 mos<br><span class="text-male">Male</span></td>
               <td>Walingwaling</td>
               <td>7.9</td>
@@ -229,7 +223,7 @@
             </tr>
 
             <tr>
-              <td><strong>ANNEZA BATAWAN</strong><br><small class="text-muted">CHD-005</small></td>
+              <td><strong>ANNEZA BATAWAN</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>6.3</td>
@@ -252,7 +246,7 @@
             </tr>
 
             <tr>
-              <td><strong>GINO GULLES</strong><br><small class="text-muted">CHD-006</small></td>
+              <td><strong>GINO GULLES</strong></td>
               <td>2 mos<br><span class="text-male">Male</span></td>
               <td>Walingwaling</td>
               <td>7.6</td>
@@ -275,7 +269,7 @@
             </tr>
 
             <tr>
-              <td><strong>ARZHEL WAYNE REPOLIDON</strong><br><small class="text-muted">CHD-007</small></td>
+              <td><strong>ARZHEL WAYNE REPOLIDON</strong></td>
               <td>2 mos<br><span class="text-male">Male</span></td>
               <td>Walingwaling</td>
               <td>10.5</td>
@@ -298,7 +292,7 @@
             </tr>
 
             <tr>
-              <td><strong>SHAYLEE ELOISE DIAMADA</strong><br><small class="text-muted">CHD-008</small></td>
+              <td><strong>SHAYLEE ELOISE DIAMADA</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>7.9</td>
@@ -321,7 +315,7 @@
             </tr>
 
             <tr>
-              <td><strong>ASHIRA ELISE ROBLE</strong><br><small class="text-muted">CHD-009</small></td>
+              <td><strong>ASHIRA ELISE ROBLE</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>6.0</td>
@@ -344,7 +338,7 @@
             </tr>
 
             <tr>
-              <td><strong>RAIDEN BRYCE MACAY</strong><br><small class="text-muted">CHD-010</small></td>
+              <td><strong>RAIDEN BRYCE MACAY</strong></td>
               <td>2 mos<br><span class="text-male">Male</span></td>
               <td>Walingwaling</td>
               <td>5.9</td>
@@ -367,7 +361,7 @@
             </tr>
 
             <tr>
-              <td><strong>RAINIYAH SOLAIMAN</strong><br><small class="text-muted">CHD-011</small></td>
+              <td><strong>RAINIYAH SOLAIMAN</strong></td>
               <td>2 mos<br><span class="text-male">Male</span></td>
               <td>Walingwaling</td>
               <td>7.0</td>
@@ -390,7 +384,7 @@
             </tr>
 
             <tr>
-              <td><strong>EZIAHCLAIZUEENE PADILLO</strong><br><small class="text-muted">CHD-012</small></td>
+              <td><strong>EZIAHCLAIZUEENE PADILLO</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>9.0</td>
@@ -413,7 +407,7 @@
             </tr>
 
             <tr>
-              <td><strong>ZAIDYN KLYDE JOROLAN</strong><br><small class="text-muted">CHD-013</small></td>
+              <td><strong>ZAIDYN KLYDE JOROLAN</strong></td>
               <td>2 mos<br><span class="text-female">Female</span></td>
               <td>Walingwaling</td>
               <td>7.5</td>
@@ -569,7 +563,7 @@
           <div class="modal-icon"><i class="fa-solid fa-file-pen"></i></div>
           <div>
             <h2>Update Patient Visit Record</h2>
-            <p>Amara Grace Dela Cruz <small>· CHD-001 · Purok Calachuchi · 4 mos · Female</small></p>
+            <p>Amara Grace Dela Cruz <small></small></p>
           </div>
         </div>
         <button type="button" class="close-btn" id="closeUpdateModalBtn">&times;</button>
@@ -657,7 +651,7 @@
           <div class="modal-icon">👶</div>
           <div>
             <h2>Child Patient Profile & History</h2>
-            <p class="text-cyan">Amara Grace Dela Cruz · CHD-001</p>
+            <p class="text-cyan">Amara Grace Dela Cruz </p>
           </div>
         </div>
         <button type="button" class="close-btn" id="closeViewModalBtn">&times;</button>
@@ -760,6 +754,7 @@
     </div>
   </div>
 
+  <script src="../js/session.js"></script>
   <script src="../js/child.js"></script>
 </body>
 </html>

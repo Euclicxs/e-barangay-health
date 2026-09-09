@@ -1,47 +1,100 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const registerModal = document.getElementById('registerModal');
-  const btnOpenRegister = document.getElementById('btnOpenRegister');
-  const btnCancelRegister = document.getElementById('btnCancelRegister');
+  const adminModal = document.getElementById('adminModal');
+  const btnOpenAdmin = document.getElementById('btnOpenAdmin');
+  const btnCancelAdmin = document.getElementById('btnCancelAdmin');
   const loginForm = document.getElementById('loginForm');
-  const registerForm = document.getElementById('registerForm');
+  const adminLoginForm = document.getElementById('adminLoginForm');
 
-  // Buksan ang Registration Modal
-  if (btnOpenRegister && registerModal) {
-    btnOpenRegister.addEventListener('click', (e) => {
+  // Open Admin Modal
+  if (btnOpenAdmin && adminModal) {
+    btnOpenAdmin.addEventListener('click', (e) => {
       e.preventDefault();
-      registerModal.style.display = 'flex';
+      adminModal.style.display = 'flex';
     });
   }
 
-  // Isara ang Registration Modal
-  const closeRegisterModal = () => {
-    if (registerModal) registerModal.style.display = 'none';
+  // Close Admin Modal
+  const closeAdminModal = () => {
+    if (adminModal) adminModal.style.display = 'none';
   };
 
-  if (btnCancelRegister) btnCancelRegister.addEventListener('click', closeRegisterModal);
+  if (btnCancelAdmin) btnCancelAdmin.addEventListener('click', closeAdminModal);
 
-  // Isara rin kapag nag-click sa labas ng modal box
+  // Close modal when clicking outside
   window.addEventListener('click', (e) => {
-    if (e.target === registerModal) {
-      closeRegisterModal();
+    if (e.target === adminModal) {
+      closeAdminModal();
     }
   });
 
-  // Login Submit Handler (Diretso papuntang dashboard.html)
+  // BHW Login Submit Handler (Validate against credential storage)
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      window.location.href = 'dashboard.html';
+      
+      const usernameInput = loginForm.querySelector('input[type="text"]');
+      const passwordInput = loginForm.querySelector('input[type="password"]');
+      
+      const username = usernameInput.value;
+      const password = passwordInput.value;
+      
+      // Validate BHW credentials using the credential storage
+      const user = validateBHWLogin(username, password);
+      
+      if (user) {
+        // Successful BHW login
+        // Update last login time
+        user.lastLogin = new Date().toISOString();
+        
+        // Create session
+        createSession({
+          userType: 'bhw',
+          userId: user.id,
+          userName: `${user.firstName} ${user.middleInitial ? user.middleInitial + '. ' : ''}${user.lastName}`,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          middleInitial: user.middleInitial,
+          contact: user.contact
+        });
+        
+        window.location.href = 'dashboard.html';
+      } else {
+        // Failed login
+        alert('Invalid credentials or account is inactive. Please try again.');
+        loginForm.reset();
+      }
     });
   }
 
-  // Register Submit Handler
-  if (registerForm) {
-    registerForm.addEventListener('submit', (e) => {
+  // Admin Login Submit Handler
+  if (adminLoginForm) {
+    adminLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      alert('Registration submitted! Account created and pending for head review.');
-      closeRegisterModal();
-      registerForm.reset();
+      
+      const adminUsername = document.getElementById('adminUsername').value;
+      const adminPassword = document.getElementById('adminPassword').value;
+
+      // Validate admin credentials
+      if (adminUsername === ADMIN_CREDENTIALS.username && 
+          adminPassword === ADMIN_CREDENTIALS.password) {
+        // Successful admin login
+        closeAdminModal();
+        adminLoginForm.reset();
+        
+        // Create admin session
+        createSession({
+          userType: 'admin',
+          userId: 'ADMIN',
+          userName: 'System Administrator',
+          adminUsername: adminUsername
+        });
+        
+        window.location.href = 'admin.html';
+      } else {
+        // Failed admin login
+        alert('Invalid admin credentials. Please try again.');
+        adminLoginForm.reset();
+      }
     });
   }
 });

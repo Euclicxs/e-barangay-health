@@ -6,6 +6,7 @@
   <title>Maternal / Prenatal Module - e-Barangay Health</title>
   <link rel="stylesheet" href="../css/maternal.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/theme-override.css">
 </head>
 <body>
 
@@ -15,9 +16,9 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <!-- SIDEBAR HEADER / BRAND -->
-      <div class="brand">
-        <div class="brand-logo">
-          <img src="../image/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
           <h2>e-Barangay <span>Health</span></h2>
@@ -65,22 +66,14 @@
               <i class="fa-solid fa-chart-line"></i>
               <span>Reports & Exports</span>
             </a>
-          </li>
-          <li>
-            <a href="security.html">
-              <i class="fa-solid fa-user-lock"></i>
-              <span>Security Settings</span>
-            </a>
-          </li>
-        </ul>
+          </li>        </ul>
       </div>
 
       <div class="sidebar-footer">
         <div class="user-profile">
-          <div class="avatar">M</div>
+          <div class="avatar" id="userAvatar"></div>
           <div class="user-info">
-            <h4>Maria Santos</h4>
-            <p>BHW · Purok Calachuchi</p>
+            <h4 id="userNameDisplay"></h4>
           </div>
         </div>
         <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
@@ -90,25 +83,21 @@
     <!-- MAIN CONTENT -->
     <main class="main-content">
       <!-- TOP NAVIGATION HEADER -->
-      <header class="top-header">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search patient name or record ID...">
-        </div>
-        <div class="header-right">
+       <header class="top-header">
+        <div class="header-right" style="margin-left: auto;">
           <div class="location-tag">
             <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
           </div>
           <div class="icon-btn"><i class="fa-solid fa-bell"></i></div>
           <div class="time-display">
-            <span class="time" id="clock-time">09:27:36 PM</span>
-            <span class="date" id="clock-date">Fri, Aug 7, 2026</span>
+            <span class="time" id="clock-time">01:43:49 PM</span>
+            <span class="date" id="clock-date">Sun, Aug 9, 2026</span>
           </div>
         </div>
-      </header>
+        </header>
 
       <!-- MODULE HEADER -->
-      <div class="module-header">
+      <section class="dashboard-header">
         <div>
           <h1><i class="fa-solid fa-person-pregnant text-cyan"></i> Maternal / Prenatal Module</h1>
           <p>Brgy. New Katipunan, Matanao · 8 records shown</p>
@@ -116,7 +105,7 @@
         <button class="btn-primary" id="btnEncodeMaternal">
           <i class="fa-solid fa-plus"></i> Encode Visit
         </button>
-      </div>
+      </section>
 
       <!-- FILTER BAR -->
       <div class="filter-bar">
@@ -166,7 +155,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Maria Luisa Aquino</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-001</span>
               </td>
               <td>Calachuchi</td>
               <td>62.4</td>
@@ -185,7 +173,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Jennifer Anne Pascual</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-002</span>
               </td>
               <td>Bougainvillea</td>
               <td>70.1</td>
@@ -204,7 +191,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Rosario Blanca Torres</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-003</span>
               </td>
               <td>Walingwaling</td>
               <td>58.9</td>
@@ -223,7 +209,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Cristina Mae Navarro</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-004</span>
               </td>
               <td>Sampaguita</td>
               <td>75.2</td>
@@ -242,7 +227,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Analiza Joy Soriano</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-005</span>
               </td>
               <td>Santan</td>
               <td>64.7</td>
@@ -261,7 +245,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Lorelei Dawn Magno</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-006</span>
               </td>
               <td>Rose</td>
               <td>68.3</td>
@@ -280,7 +263,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Patricia Grace Ocampo</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-007</span>
               </td>
               <td>Daisy</td>
               <td>55.6</td>
@@ -299,7 +281,6 @@
             <tr>
               <td>
                 <strong style="color: white; display: block;">Sheila Mae Bernardo</strong>
-                <span class="text-muted" style="font-size: 10px;">MTR-008</span>
               </td>
               <td>Calachuchi</td>
               <td>72.8</td>
@@ -427,6 +408,148 @@
     </div>
   </div>
 
+  <!-- VIEW MATERNAL RECORD MODAL -->
+  <div id="viewMaternalModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="viewMaternalTitle">Maternal Patient Profile</h2>
+        <p id="viewMaternalSubtitle">Patient Details</p>
+        <button type="button" class="close-btn" id="closeViewMaternalBtn">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Full Name</label>
+            <p id="viewMaternalName">-</p>
+          </div>
+          <div class="info-item">
+            <label>Patient Code</label>
+            <p id="viewMaternalCode">-</p>
+          </div>
+          <div class="info-item">
+            <label>Purok</label>
+            <p id="viewMaternalPurok">-</p>
+          </div>
+          <div class="info-item">
+            <label>Status</label>
+            <p id="viewMaternalStatus">-</p>
+          </div>
+          <div class="info-item">
+            <label>Weight</label>
+            <p id="viewMaternalWeight">-</p>
+          </div>
+          <div class="info-item">
+            <label>Blood Pressure</label>
+            <p id="viewMaternalBP">-</p>
+          </div>
+          <div class="info-item">
+            <label>Pulse Rate</label>
+            <p id="viewMaternalPR">-</p>
+          </div>
+          <div class="info-item">
+            <label>Temperature</label>
+            <p id="viewMaternalTemp">-</p>
+          </div>
+          <div class="info-item">
+            <label>TT Dose</label>
+            <p id="viewMaternalTT">-</p>
+          </div>
+          <div class="info-item">
+            <label>Iron Supplementation</label>
+            <p id="viewMaternalIron">-</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="cancelViewMaternalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPDATE MATERNAL RECORD MODAL -->
+  <div id="updateMaternalModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Update Maternal Record</h2>
+        <p id="updateMaternalSubtitle">Edit patient information</p>
+        <button type="button" class="close-btn" id="closeUpdateMaternalBtn">&times;</button>
+      </div>
+      
+      <form id="updateMaternalForm">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="updateMaternalName" readonly>
+            </div>
+            <div class="form-group">
+              <label>Patient Code</label>
+              <input type="text" id="updateMaternalCode" readonly>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Purok</label>
+              <input type="text" id="updateMaternalPurok" readonly>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="updateMaternalStatus">
+                <option value="Completed">Completed</option>
+                <option value="Due This Month">Due This Month</option>
+                <option value="Overdue">Overdue</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Weight (kg)</label>
+              <input type="text" id="updateMaternalWeight" required>
+            </div>
+            <div class="form-group">
+              <label>Blood Pressure</label>
+              <input type="text" id="updateMaternalBP" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pulse Rate (bpm)</label>
+              <input type="text" id="updateMaternalPR" required>
+            </div>
+            <div class="form-group">
+              <label>Temperature (�C)</label>
+              <input type="text" id="updateMaternalTemp" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>TT Dose</label>
+              <input type="text" id="updateMaternalTT" required>
+            </div>
+            <div class="form-group">
+              <label>Iron Supplementation</label>
+              <select id="updateMaternalIron">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="cancelUpdateMaternalBtn">Cancel</button>
+          <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Update Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="../js/session.js"></script>
   <script src="../js/maternal.js"></script>
 </body>
 </html>
