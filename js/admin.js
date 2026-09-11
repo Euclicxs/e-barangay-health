@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Filter users
   function filterUsers() {
-    const searchTerm = searchUsers.value.toLowerCase();
+    const searchTerm = searchUsers ? searchUsers.value.toLowerCase() : '';
     const statusFilter = filterStatus.value;
 
     let filteredUsers = bhwUsers.filter(user => {
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `${user.firstName} ${user.middleInitial} ${user.lastName}`.toLowerCase()
         : `${user.firstName} ${user.lastName}`.toLowerCase();
       
-      const matchesSearch = fullName.includes(searchTerm) || 
+      const matchesSearch = !searchTerm || fullName.includes(searchTerm) || 
                          user.id.toLowerCase().includes(searchTerm) ||
                          user.contact.includes(searchTerm) ||
                          (Array.isArray(user.assignedPuroks) && user.assignedPuroks.some(k => purokKeyToName(k).toLowerCase().includes(searchTerm)));
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCancelDeleteModal.addEventListener('click', closeDeleteModal);
   btnConfirmDelete.addEventListener('click', deleteUser);
 
-  searchUsers.addEventListener('input', filterUsers);
+  if (searchUsers) searchUsers.addEventListener('input', filterUsers);
   filterStatus.addEventListener('change', filterUsers);
   historyFilter.addEventListener('change', filterHistory);
 
@@ -509,60 +509,136 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
 
   const purokTabs = document.querySelectorAll('.purok-tab');
+  const purokMasterFilter = document.getElementById('purokMasterFilter');
+
+  let currentPurokKey = 'all';
+  let masterlistRows = [];
+  let masterlistPageIndex = 0;
+  let masterlistPageSize = 10;
+  const masterlistSearchEl = document.getElementById('masterlistSearch');
+  const masterlistPager = document.getElementById('masterlistPager');
+  const masterlistPagerInfo = document.getElementById('masterlistPagerInfo');
+  const masterlistPageSizeEl = document.getElementById('masterlistPageSize');
 
   function renderPurok(purokKey) {
-    const data = purokData[purokKey];
     const statHouseholds = document.getElementById('stat-households');
-    if (!data || !statHouseholds) return;
+    if (statHouseholds === null) return;
 
-    // Compute statuses from dates for each record
-    data.records.forEach(rec => {
-      rec.status = computeStatus(rec.nextVisitDate, rec.lastVisitDate);
+    currentPurokKey = purokKey || 'all';
+    const isAll = currentPurokKey === 'all';
+    const keys = isAll ? Object.keys(purokData) : [currentPurokKey];
+
+    const searchTerm = masterlistSearchEl ? masterlistSearchEl.value.trim().toLowerCase() : '';
+
+    const allRows = [];
+    let households = 0;
+    const bhwNamesSet = new Set();
+
+    keys.forEach(key => {
+      const data = purokData[key];
+      if (!data) return;
+      households += Number(data.households) || 0;
+      (data.records || []).forEach(rec => {
+        allRows.push({
+          rec,
+          purokName: data.name,
+          status: computeStatus(rec.nextVisitDate, rec.lastVisitDate)
+        });
+      });
+      if (typeof getPurokBhwNames === 'function') {
+        const names = getPurokBhwNames(key);
+        if (Array.isArray(names)) names.forEach(n => n && bhwNamesSet.add(n));
+        else if (names) bhwNamesSet.add(names);
+      } else if (Array.isArray(data.bhws)) {
+        data.bhws.forEach(n => n && bhwNamesSet.add(n));
+      } else if (data.bhws) {
+        bhwNamesSet.add(data.bhws);
+      }
     });
 
-    const childRecords = data.records.filter(r => r.type === 'Child');
-    const motherRecords = data.records.filter(r => r.type === 'Mother');
-    const totalPopulation = data.records.length;
-    const overdueCount = data.records.filter(r => r.status === 'Overdue').length;
-    const dueThisMonthCount = data.records.filter(r => r.status === 'Due This Month').length;
+    // Apply masterlist search (name, address, or purok name)
+    const rows = !searchTerm ? allRows : allRows.filter(r =>
+      (r.rec.name && r.rec.name.toLowerCase().includes(searchTerm)) ||
+      (r.rec.address && r.rec.address.toLowerCase().includes(searchTerm)) ||
+      (r.purokName && r.purokName.toLowerCase().includes(searchTerm))
+    );
+    masterlistRows = rows;
+
+    const childRecords = rows.filter(r => r.rec.type === 'Child');
+    const motherRecords = rows.filter(r => r.rec.type === 'Mother');
+    const totalPopulation = rows.length;
+    const overdueCount = rows.filter(r => r.status === 'Overdue').length;
+    const dueThisMonthCount = rows.filter(r => r.status === 'Due This Month').length;
 
     // Update stats
-    document.getElementById('stat-households').innerText = data.households;
-    document.getElementById('stat-households-sub').innerText = `Registered in ${data.name}`;
+    document.getElementById('stat-households').innerText = String(households);
+    document.getElementById('stat-households-sub').innerText = isAll
+      ? 'Registered across all puroks'
+      : `Registered in ${purokData[currentPurokKey].name}`;
 
-    document.getElementById('stat-population').innerText = totalPopulation;
+    document.getElementById('stat-population').innerText = String(totalPopulation);
     document.getElementById('stat-population-sub').innerText = `${childRecords.length} children · ${motherRecords.length} mothers`;
 
-    document.getElementById('stat-due').innerText = overdueCount + dueThisMonthCount;
+    document.getElementById('stat-due').innerText = String(overdueCount + dueThisMonthCount);
     document.getElementById('stat-due-sub').innerText = `${overdueCount} overdue · ${dueThisMonthCount} due this month`;
 
     // Derive BHW assignments from live credentials when available
-    const assignedBhwNames = typeof getPurokBhwNames === 'function' ? getPurokBhwNames(purokKey) : null;
-    const assignedBhwCount = typeof getUsersByPurokKey === 'function' ? getUsersByPurokKey(purokKey).length : 0;
-    const bhwNames = assignedBhwNames || data.bhws;
-    const bhwCountDisplay = assignedBhwCount || data.bhwCount;
-
+    let bhwCountDisplay;
+    if (typeof getUsersByPurokKey === 'function') {
+      const userIds = new Set();
+      keys.forEach(key => {
+        const users = getUsersByPurokKey(key);
+        (users || []).forEach(u => userIds.add(u.id || u.code || u.name));
+      });
+      bhwCountDisplay = userIds.size;
+    } else {
+      bhwCountDisplay = keys.reduce((sum, key) => sum + (Number(purokData[key].bhwCount) || 0), 0);
+    }
+    const bhwNames = Array.from(bhwNamesSet).filter(Boolean);
     document.getElementById('stat-bhws').innerText = String(bhwCountDisplay);
-    document.getElementById('stat-bhws-sub').innerText = bhwNames;
+    document.getElementById('stat-bhws-sub').innerText = bhwNames.length
+      ? bhwNames.join(', ')
+      : (isAll ? `${bhwCountDisplay} active BHWs` : ((purokData[currentPurokKey] || {}).bhws || '—'));
 
     // Update table title & count
-    document.getElementById('table-title').innerText = `Purok ${data.name} — Health Records`;
+    document.getElementById('table-title').innerText = isAll
+      ? 'All Puroks — Health Records'
+      : `Purok ${purokData[currentPurokKey].name} — Health Records`;
     document.getElementById('entries-count').innerText = `${totalPopulation} entries (${childRecords.length} children, ${motherRecords.length} mothers)`;
+
+    // Show/hide the Purok column
+    const purokColTh = document.getElementById('masterlistPurokCol');
+    if (purokColTh) purokColTh.classList.toggle('show', isAll);
+
+    // Pagination math
+    const pageSize = masterlistPageSize === 'all' ? rows.length : (Number(masterlistPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(rows.length / pageSize)) : 1;
+    if (masterlistPageIndex >= totalPages) masterlistPageIndex = totalPages - 1;
+    if (masterlistPageIndex < 0) masterlistPageIndex = 0;
+    const start = masterlistPageIndex * pageSize;
+    const end = Math.min(start + pageSize, rows.length);
+    const pageRows = rows.slice(start, end);
 
     // Render table rows
     const tbody = document.getElementById('purok-table-body');
     tbody.innerHTML = '';
 
-    data.records.forEach(rec => {
+    if (pageRows.length === 0) {
+      const emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = `<td colspan="7" class="purok-empty">No matching records for the current search &amp; filter.</td>`;
+      tbody.appendChild(emptyTr);
+    }
+
+    pageRows.forEach(({ rec, purokName, status }) => {
       const typeTag = rec.type === 'Child'
         ? `<span class="type-pill type-child"><i class="fa-solid fa-child"></i> Child</span>`
         : `<span class="type-pill type-mother"><i class="fa-solid fa-person-pregnant"></i> Mother</span>`;
 
       let statusPill = '';
-      if (rec.status === 'Overdue') {
+      if (status === 'Overdue') {
         const days = getOverdueDays(rec.nextVisitDate);
         statusPill = `<span class="status-pill status-red">• Overdue (${days}d)</span>`;
-      } else if (rec.status === 'Due This Month') {
+      } else if (status === 'Due This Month') {
         statusPill = `<span class="status-pill status-yellow">• Due This Month</span>`;
       } else {
         statusPill = `<span class="status-pill status-green">• Completed</span>`;
@@ -573,6 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="person-name">${rec.name}</td>
+        ${isAll ? `<td class="masterlist-purok-col">${purokName}</td>` : ''}
         <td>${typeTag}</td>
         <td>${rec.address}</td>
         <td>${statusPill}</td>
@@ -586,6 +663,64 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       tbody.appendChild(tr);
     });
+
+    updateMasterlistPager(rows.length, start, end);
+  }
+
+  function updateMasterlistPager(total, start, end) {
+    if (masterlistPagerInfo) {
+      masterlistPagerInfo.textContent = total === 0
+        ? 'Showing 0–0 of 0'
+        : `Showing ${start + 1}–${end} of ${total}`;
+    }
+    if (!masterlistPager) return;
+    masterlistPager.innerHTML = '';
+
+    const pageSize = masterlistPageSize === 'all' ? total : (Number(masterlistPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+
+    const makeBtn = (label, page, active, disabled) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `pager-btn${active ? ' active' : ''}`;
+      b.textContent = label;
+      if (disabled) b.disabled = true;
+      b.addEventListener('click', () => {
+        masterlistPageIndex = page;
+        renderPurok(currentPurokKey);
+      });
+      return b;
+    };
+
+    masterlistPager.appendChild(makeBtn('‹ Prev', masterlistPageIndex - 1, false, masterlistPageIndex <= 0));
+
+    const maxVisible = 7;
+    let startPage = 0;
+    let endPage = totalPages - 1;
+    if (totalPages > maxVisible) {
+      startPage = Math.max(0, masterlistPageIndex - Math.floor(maxVisible / 2));
+      endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+      startPage = Math.max(0, endPage - maxVisible + 1);
+    }
+    if (startPage > 0) masterlistPager.appendChild(makeBtn('1', 0, false, false));
+    if (startPage > 1) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      masterlistPager.appendChild(ell);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      masterlistPager.appendChild(makeBtn(String(i + 1), i, i === masterlistPageIndex, false));
+    }
+    if (endPage < totalPages - 2) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      masterlistPager.appendChild(ell);
+    }
+    if (endPage < totalPages - 1) masterlistPager.appendChild(makeBtn(String(totalPages), totalPages - 1, false, false));
+
+    masterlistPager.appendChild(makeBtn('Next ›', masterlistPageIndex + 1, false, masterlistPageIndex >= totalPages - 1));
   }
 
   // Purok filter tabs
@@ -593,15 +728,60 @@ document.addEventListener('DOMContentLoaded', () => {
     tab.addEventListener('click', function() {
       purokTabs.forEach(t => t.classList.remove('active'));
       this.classList.add('active');
+      if (purokMasterFilter) purokMasterFilter.value = this.getAttribute('data-purok');
+      masterlistPageIndex = 0;
       renderPurok(this.getAttribute('data-purok'));
     });
   });
 
-  // Print field visit sheet
+  // All-Puroks dropdown filter (synced with the tabs)
+  if (purokMasterFilter) {
+    purokMasterFilter.addEventListener('change', function() {
+      const value = this.value;
+      if (value === 'all') {
+        purokTabs.forEach(t => t.classList.remove('active'));
+      } else {
+        purokTabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-purok') === value));
+      }
+      masterlistPageIndex = 0;
+      renderPurok(value);
+    });
+  }
+
+  // Masterlist search
+  if (masterlistSearchEl) {
+    masterlistSearchEl.addEventListener('input', () => {
+      masterlistPageIndex = 0;
+      renderPurok(currentPurokKey);
+    });
+  }
+
+  // Masterlist rows-per-page
+  if (masterlistPageSizeEl) {
+    masterlistPageSizeEl.addEventListener('change', function() {
+      const val = this.value;
+      masterlistPageSize = val === 'all' ? 'all' : (Number(val) || 10);
+      masterlistPageIndex = 0;
+      renderPurok(currentPurokKey);
+    });
+  }
+
+  // Print field visit sheet — expands to all matching rows before printing
   const btnPrintPurok = document.getElementById('btnPrintPurok');
   if (btnPrintPurok) {
     btnPrintPurok.addEventListener('click', () => {
-      window.print();
+      const dateEl = document.querySelector('.print-date-text');
+      if (dateEl) dateEl.textContent = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+      const prevState = { page: masterlistPageIndex, size: masterlistPageSize };
+      masterlistPageIndex = 0;
+      masterlistPageSize = 'all';
+      renderPurok(currentPurokKey);
+      setTimeout(() => {
+        window.print();
+        masterlistPageIndex = prevState.page;
+        masterlistPageSize = prevState.size;
+        renderPurok(currentPurokKey);
+      }, 60);
     });
   }
 
@@ -611,18 +791,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let purokBarChartInstance = null;
   let statusDonutChartInstance = null;
+  let vaccineGapChartInstance = null;
   let currentAnalyticsRange = 'month';
 
-  // Vaccine type coverage data (derived from records)
-  const vaccineTypes = [
-    { name: 'BCG', total: 10, covered: 9 },
-    { name: 'OPV', total: 10, covered: 7 },
-    { name: 'IPV', total: 10, covered: 5 },
-    { name: 'PENTA', total: 10, covered: 4 },
-    { name: 'PCV', total: 10, covered: 5 },
-    { name: 'MCV1', total: 10, covered: 3 },
-    { name: 'MCV2', total: 10, covered: 3 }
-  ];
+  // Vaccine type coverage data (derived from live records)
+  const vaccineTypes = (function () {
+    if (typeof getAllPurokRecords !== 'function' || typeof VACCINES === 'undefined') {
+      return [
+        { name: 'BCG', total: 0, covered: 0 },
+        { name: 'OPV', total: 0, covered: 0 },
+        { name: 'IPV', total: 0, covered: 0 },
+        { name: 'PENTA', total: 0, covered: 0 },
+        { name: 'PCV', total: 0, covered: 0 },
+        { name: 'MCV1', total: 0, covered: 0 },
+        { name: 'MCV2', total: 0, covered: 0 }
+      ];
+    }
+    const allChildren = getAllPurokRecords().filter(r => r.type === 'Child');
+    const total = allChildren.length;
+    return VACCINES.map(v => ({
+      name: v,
+      total,
+      covered: allChildren.filter(rec => Array.isArray(rec.vaccines) && rec.vaccines.includes(v)).length
+    }));
+  })();
 
   // Filter records by date range
   function filterRecordsByRange(records, range) {
@@ -767,31 +959,359 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Render vaccination coverage
+  // Shared analytics helpers
+  function setElText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function coverageBarClass(pct) {
+    if (pct >= 80) return 'green';
+    if (pct >= 50) return 'yellow';
+    if (pct >= 30) return 'orange';
+    return 'red';
+  }
+
+  function rangeRateClass(rate) {
+    if (rate >= 80) return 'text-green';
+    if (rate >= 50) return 'text-yellow';
+    return 'text-red';
+  }
+
+  function ttDoseLevel(rec) {
+    return parseInt(String(rec.ttDose).replace(/\D/g, ''), 10) || 0;
+  }
+
+  function isHighBP(bp) {
+    if (!bp) return false;
+    const match = String(bp).match(/(\d+)\s*\/\s*(\d+)/);
+    if (!match) return false;
+    return parseInt(match[1], 10) >= 130 || parseInt(match[2], 10) >= 80;
+  }
+
+  // Render vaccination coverage (clickable cards)
   function renderVaccineCoverage() {
     const container = document.getElementById('vaccCoverageList');
     if (!container) return;
 
-    container.innerHTML = '';
-    vaccineTypes.forEach(vax => {
-      const pct = Math.round((vax.covered / vax.total) * 100);
-      let barColor = 'cyan';
-      if (pct >= 80) barColor = 'green';
-      else if (pct >= 50) barColor = 'yellow';
-      else if (pct >= 30) barColor = 'orange';
-      else barColor = 'red';
+    const children = getAllPurokRecords().filter(r => r.type === 'Child');
+    const total = children.length;
+    if (total === 0) {
+      container.innerHTML = '<p class="coverage-empty">No child records available.</p>';
+      return;
+    }
 
-      container.innerHTML += `
-        <div class="coverage-item">
-          <div class="item-info">
-            <span>${vax.name}</span>
-            <span class="text-${barColor}">${pct}%</span>
+    container.innerHTML = vaccineTypes.map(vax => {
+      const pct = Math.round((vax.covered / vax.total) * 100);
+      const pending = vax.total - vax.covered;
+      const barColor = coverageBarClass(pct);
+      return `
+        <div class="coverage-card" data-cover="${vax.name}" title="View who received ${vax.name}">
+          <div class="coverage-card-head">
+            <span class="coverage-code">${vax.name}</span>
+            <span class="coverage-pct text-${barColor}">${pct}%</span>
+          </div>
+          <div class="coverage-stats">
+            <span><strong>${vax.covered}</strong>/<strong>${vax.total}</strong> covered</span>
+            <span class="${pending > 0 ? 'text-red' : 'text-green'}">${pending} pending</span>
           </div>
           <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${pct}%;"></div></div>
         </div>
       `;
+    }).join('');
+  }
+
+  // Render maternal / prenatal coverage (clickable cards)
+  function renderMaternalCoverage() {
+    const container = document.getElementById('maternalCoverageList');
+    if (!container) return;
+
+    const mothers = getAllPurokRecords().filter(r => r.type === 'Mother');
+    const total = mothers.length;
+    if (total === 0) {
+      container.innerHTML = '<p class="coverage-empty">No maternal records available.</p>';
+      return;
+    }
+
+    const cards = [];
+    for (let dose = 1; dose <= 5; dose++) {
+      const reached = mothers.filter(m => ttDoseLevel(m) >= dose).length;
+      const pct = Math.round((reached / total) * 100);
+      const notYet = total - reached;
+      const barColor = coverageBarClass(pct);
+      cards.push(`
+        <div class="coverage-card" data-cover="tt-${dose}" title="View who reached TT ${dose}">
+          <div class="coverage-card-head">
+            <span class="coverage-code">TT ${dose}</span>
+            <span class="coverage-pct text-${barColor}">${pct}%</span>
+          </div>
+          <div class="coverage-stats">
+            <span><strong>${reached}</strong>/<strong>${total}</strong> reached</span>
+            <span class="${notYet > 0 ? 'text-red' : 'text-green'}">${notYet} not yet</span>
+          </div>
+          <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${pct}%;"></div></div>
+        </div>
+      `);
+    }
+
+    const ironCount = mothers.filter(m => !!m.iron).length;
+    const ironPct = Math.round((ironCount / total) * 100);
+    const ironBar = coverageBarClass(ironPct);
+    cards.push(`
+      <div class="coverage-card" data-cover="iron" title="View mothers on iron supplementation">
+        <div class="coverage-card-head">
+          <span class="coverage-code">IRON</span>
+          <span class="coverage-pct text-${ironBar}">${ironPct}%</span>
+        </div>
+        <div class="coverage-stats">
+          <span><strong>${ironCount}</strong>/<strong>${total}</strong> on iron</span>
+          <span class="${(total - ironCount) > 0 ? 'text-red' : 'text-green'}">${total - ironCount} not taking</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar ${ironBar}" style="width: ${ironPct}%;"></div></div>
+      </div>
+    `);
+
+    const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
+    const bpPct = Math.round((bpCount / total) * 100);
+    cards.push(`
+      <div class="coverage-card" data-cover="bp" title="View mothers with elevated blood pressure">
+        <div class="coverage-card-head">
+          <span class="coverage-code">HIGH BP</span>
+          <span class="coverage-pct text-${bpCount > 0 ? 'red' : 'green'}">${bpPct}%</span>
+        </div>
+        <div class="coverage-stats">
+          <span><strong>${bpCount}</strong>/<strong>${total}</strong> elevated</span>
+          <span class="${bpCount > 0 ? 'text-red' : 'text-green'}">${bpCount === 0 ? 'none' : 'monitor closely'}</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar red" style="width: ${bpPct}%;"></div></div>
+      </div>
+    `);
+
+    container.innerHTML = cards.join('');
+  }
+
+  // Render coverage stat cards
+  function renderCoverageStatCards() {
+    const allRecords = getAllPurokRecords();
+    const children = allRecords.filter(r => r.type === 'Child');
+    const mothers = allRecords.filter(r => r.type === 'Mother');
+
+    const totalVax = vaccineTypes.reduce((s, v) => s + v.total, 0);
+    const coveredVax = vaccineTypes.reduce((s, v) => s + v.covered, 0);
+    const avgVaccinePct = totalVax ? Math.round((coveredVax / totalVax) * 100) : 0;
+
+    const fullyProtected = children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
+    const tt5Reached = mothers.filter(m => ttDoseLevel(m) >= 5).length;
+    const tt5Pct = mothers.length ? Math.round((tt5Reached / mothers.length) * 100) : 0;
+    const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
+
+    setElText('analyticsVaccineCoverage', `${avgVaccinePct}%`);
+    setElText('analyticsFullyProtected', String(fullyProtected));
+    setElText('analyticsTt5Coverage', `${tt5Pct}%`);
+    setElText('analyticsHighBpMothers', String(bpCount));
+  }
+
+  // Render top vaccine gaps chart (lowest coverage first)
+  function renderVaccineGapChart() {
+    const ctx = document.getElementById('vaccineGapChart');
+    if (!ctx) return;
+
+    const sorted = vaccineTypes.slice().sort((a, b) => {
+      const aPct = a.total ? a.covered / a.total : 0;
+      const bPct = b.total ? b.covered / b.total : 0;
+      return aPct - bPct;
+    });
+
+    const labels = sorted.map(v => v.name);
+    const data = sorted.map(v => v.total ? Math.round((v.covered / v.total) * 100) : 0);
+
+    if (vaccineGapChartInstance) vaccineGapChartInstance.destroy();
+
+    vaccineGapChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Coverage %',
+          data: data,
+          backgroundColor: data.map(p => p >= 80 ? '#22c55e' : p >= 50 ? '#f59e0b' : '#ef4444'),
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, max: 100, grid: { display: false } },
+          y: { grid: { display: false } }
+        }
+      }
     });
   }
+
+  // Render per-purok coverage table
+  function renderPerPurokCoverage() {
+    const tbody = document.getElementById('perPurokCoverageBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    const allRecords = getAllPurokRecords();
+
+    Object.keys(purokData).forEach(key => {
+      const recs = allRecords.filter(r => r.purokKey === key);
+      const children = recs.filter(r => r.type === 'Child');
+      const mothers = recs.filter(r => r.type === 'Mother');
+
+      const fullyPct = children.length
+        ? Math.round((children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length / children.length) * 100)
+        : 0;
+      const tt5Pct = mothers.length
+        ? Math.round((mothers.filter(m => ttDoseLevel(m) >= 5).length / mothers.length) * 100)
+        : 0;
+      const ironPct = mothers.length
+        ? Math.round((mothers.filter(m => !!m.iron).length / mothers.length) * 100)
+        : 0;
+      const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${purokData[key].name}</strong></td>
+        <td>${children.length}</td>
+        <td>${mothers.length}</td>
+        <td class="${rangeRateClass(fullyPct)}"><strong>${fullyPct}%</strong></td>
+        <td class="${rangeRateClass(tt5Pct)}">${tt5Pct}%</td>
+        <td class="${rangeRateClass(ironPct)}">${ironPct}%</td>
+        <td><span class="status-pill status-${bpCount > 0 ? 'red' : 'green'}">${bpCount}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ========== COVERAGE DETAILS MODAL (who is covered vs not) ==========
+  function buildCoverageNameList(items) {
+    if (!items.length) return '<li class="coverage-list-empty">No one in this group</li>';
+    return items.map(item =>
+      `<li><i class="fa-solid fa-circle"></i><strong title="${item.name}">${item.name}</strong><span>Purok ${item.purok}</span></li>`
+    ).join('');
+  }
+
+  function openCoverageList(title, covered, pending, coveredHeading, pendingHeading) {
+    const modal = document.getElementById('coverageListModal');
+    if (!modal) return;
+    setElText('coverageListTitle', title);
+    setElText('coverageListCoveredTitle', coveredHeading);
+    setElText('coverageListPendingTitle', pendingHeading);
+    const coveredEl = document.getElementById('coverageListCovered');
+    const pendingEl = document.getElementById('coverageListPending');
+    if (coveredEl) coveredEl.innerHTML = buildCoverageNameList(covered);
+    if (pendingEl) pendingEl.innerHTML = buildCoverageNameList(pending);
+    modal.style.display = 'flex';
+  }
+
+  function closeCoverageList() {
+    const modal = document.getElementById('coverageListModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function handleCoverageCardClick(card) {
+    const key = card.getAttribute('data-cover');
+    if (!key) return;
+
+    const allRecords = getAllPurokRecords();
+    const children = allRecords.filter(r => r.type === 'Child');
+    const mothers = allRecords.filter(r => r.type === 'Mother');
+
+    if (VACCINES.indexOf(key) !== -1) {
+      const covered = children.filter(c => Array.isArray(c.vaccines) && c.vaccines.includes(key));
+      const pending = children.filter(c => !(Array.isArray(c.vaccines) && c.vaccines.includes(key)));
+      openCoverageList(`${key} — Vaccination Coverage`, covered, pending,
+        `Vaccinated (${covered.length})`, `Not yet vaccinated (${pending.length})`);
+    } else if (key.indexOf('tt-') === 0) {
+      const dose = parseInt(key.split('-')[1], 10) || 1;
+      const covered = mothers.filter(m => ttDoseLevel(m) >= dose);
+      const pending = mothers.filter(m => !(ttDoseLevel(m) >= dose));
+      openCoverageList(`TT ${dose} — Immunization Coverage`, covered, pending,
+        `Reached TT ${dose} (${covered.length})`, `Not yet reached (${pending.length})`);
+    } else if (key === 'iron') {
+      const covered = mothers.filter(m => !!m.iron);
+      const pending = mothers.filter(m => !m.iron);
+      openCoverageList('IRON — Iron Supplementation', covered, pending,
+        `Taking iron (${covered.length})`, `Not taking (${pending.length})`);
+    } else if (key === 'bp') {
+      const covered = mothers.filter(m => isHighBP(m.bp));
+      const pending = mothers.filter(m => !isHighBP(m.bp));
+      openCoverageList('HIGH BP — Blood Pressure Monitoring', covered, pending,
+        `Elevated BP (${covered.length})`, `Normal BP (${pending.length})`);
+    }
+  }
+
+  // ========== CSV EXPORTS ==========
+  function downloadCsv(filename, rows) {
+    const csv = rows.map(row => row.map(value => {
+      const s = String(value == null ? '' : value);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')).join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportVaccineCsv() {
+    const children = getAllPurokRecords().filter(r => r.type === 'Child');
+    const rows = [['Name', 'Purok', 'Address', 'Vaccines Received', 'Missing Vaccines']];
+    children.forEach(c => {
+      const had = Array.isArray(c.vaccines) ? c.vaccines : [];
+      const missing = VACCINES.filter(v => !had.includes(v)).join(', ') || 'None';
+      rows.push([c.name, c.purok, c.address, had.join(', ') || 'None', missing]);
+    });
+    downloadCsv('vaccination-coverage-report.csv', rows);
+  }
+
+  function exportMaternalCsv() {
+    const mothers = getAllPurokRecords().filter(r => r.type === 'Mother');
+    const rows = [['Name', 'Purok', 'Address', 'TT Dose', 'Iron Supplement', 'Blood Pressure']];
+    mothers.forEach(m => {
+      rows.push([m.name, m.purok, m.address, m.ttDose || 'None', m.iron ? 'Yes' : 'No', m.bp || 'N/A']);
+    });
+    downloadCsv('maternal-prenatal-coverage-report.csv', rows);
+  }
+
+  // Coverage card delegation (vaccine + maternal)
+  ['vaccCoverageList', 'maternalCoverageList'].forEach(id => {
+    const container = document.getElementById(id);
+    if (container) {
+      container.addEventListener('click', function(e) {
+        const card = e.target.closest ? e.target.closest('.coverage-card') : null;
+        if (card) handleCoverageCardClick(card);
+      });
+    }
+  });
+
+  // Modal + export bindings
+  const closeCoverageBtn = document.getElementById('closeCoverageListBtn');
+  if (closeCoverageBtn) closeCoverageBtn.addEventListener('click', closeCoverageList);
+  const coverageModal = document.getElementById('coverageListModal');
+  if (coverageModal) {
+    coverageModal.addEventListener('click', function(e) {
+      if (e.target === coverageModal) closeCoverageList();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCoverageList();
+  });
+  const btnExportVaccine = document.getElementById('btnExportVaccineCsv');
+  if (btnExportVaccine) btnExportVaccine.addEventListener('click', exportVaccineCsv);
+  const btnExportMaternal = document.getElementById('btnExportMaternalCsv');
+  if (btnExportMaternal) btnExportMaternal.addEventListener('click', exportMaternalCsv);
 
   // ============================================================
   // PRESCRIPTIVE ANALYTICS
@@ -850,6 +1370,75 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'info',
         icon: 'fa-calendar-check',
         text: `${dueRecords.length} record(s) are due this month. Schedule follow-up visits to prevent them from becoming overdue.`
+      });
+    }
+
+    // Coverage-based recommendations
+    const allChildren = data.allRecords.filter(r => r.type === 'Child');
+    const allMothers = data.allRecords.filter(r => r.type === 'Mother');
+
+    if (allChildren.length > 0) {
+      const lowVax = vaccineTypes.filter(v => v.total > 0 && (v.covered / v.total) < 0.7);
+      if (lowVax.length > 0) {
+        const names = lowVax.map(v => `${v.name} (${Math.round((v.covered / v.total) * 100)}%)`).join(', ');
+        recommendations.push({
+          type: lowVax.length >= 2 ? 'urgent' : 'warning',
+          icon: 'fa-syringe',
+          text: `Low vaccination coverage in ${names}. Organize an immunization catch-up drive for children still missing these vaccines.`
+        });
+      }
+
+      const fullyProtected = allChildren.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
+      const fullyPct = Math.round((fullyProtected / allChildren.length) * 100);
+      if (fullyPct < 70) {
+        recommendations.push({
+          type: 'warning',
+          icon: 'fa-shield-halved',
+          text: `Only ${fullyPct}% of children are fully protected (all routine vaccines). Prioritize follow-up for the ${allChildren.length - fullyProtected} incomplete children.`
+        });
+      }
+    }
+
+    if (allMothers.length > 0) {
+      const tt5Reached = allMothers.filter(m => ttDoseLevel(m) >= 5).length;
+      const tt5Pct = Math.round((tt5Reached / allMothers.length) * 100);
+      if (tt5Pct < 70) {
+        recommendations.push({
+          type: 'warning',
+          icon: 'fa-person-pregnant',
+          text: `Only ${tt5Pct}% of mothers have completed TT5. Schedule tetanus toxoid catch-up doses for the ${allMothers.length - tt5Reached} mothers below the protective level.`
+        });
+      }
+
+      const elevatedBp = allMothers.filter(m => isHighBP(m.bp));
+      if (elevatedBp.length > 0) {
+        recommendations.push({
+          type: elevatedBp.length >= 2 ? 'urgent' : 'warning',
+          icon: 'fa-heart-pulse',
+          text: `${elevatedBp.length} mother(s) have elevated blood pressure. Prioritize BP re-checks and referral for close monitoring.`
+        });
+      }
+    }
+
+    // Puroks with low full-immunization coverage feed into priority actions
+    const purokCoverageStats = {};
+    data.allRecords.forEach(rec => {
+      if (!purokCoverageStats[rec.purok]) {
+        purokCoverageStats[rec.purok] = { name: rec.purok, children: [], mothers: [], overdue: 0 };
+      }
+      if (rec.type === 'Child') purokCoverageStats[rec.purok].children.push(rec);
+      else if (rec.type === 'Mother') purokCoverageStats[rec.purok].mothers.push(rec);
+      if (rec.status === 'Overdue') purokCoverageStats[rec.purok].overdue++;
+    });
+    const purokEntries = Object.values(purokCoverageStats);
+    const lowCoveragePuroks = purokEntries.filter(p => p.children.length > 0 &&
+      p.children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length / p.children.length < 0.5);
+    if (lowCoveragePuroks.length > 0 && lowCoveragePuroks.length < purokEntries.length) {
+      const names = lowCoveragePuroks.map(p => p.name).join(', ');
+      recommendations.push({
+        type: 'warning',
+        icon: 'fa-location-dot',
+        text: `Puroks ${names} have below 50% full immunization. These areas need focused outreach and additional BHW visits.`
       });
     }
 
@@ -994,7 +1583,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = computeDescriptiveAnalytics();
     renderBarChart(data);
     renderDonutChart(data);
+    renderCoverageStatCards();
     renderVaccineCoverage();
+    renderMaternalCoverage();
+    renderVaccineGapChart();
+    renderPerPurokCoverage();
 
     const prescriptive = computePrescriptiveAnalytics(data);
     renderPriorityRanking(prescriptive.ranked);
@@ -1022,7 +1615,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAssignedPurokCheckboxes();
   renderUsers();
   renderLoginHistory();
-  renderPurok('calachuchi');
+  // Default the masterlist to the combined All-Puroks view
+  purokTabs.forEach(t => t.classList.remove('active'));
+  if (purokMasterFilter) purokMasterFilter.value = 'all';
+  renderPurok('all');
   renderAnalytics();
   updateClock();
   setInterval(updateClock, 1000);

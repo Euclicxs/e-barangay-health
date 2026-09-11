@@ -300,13 +300,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   // ========== SEARCH AND FILTER FUNCTIONALITY ==========
-  
-  // Search by child name
+
+  // Pagination state
+  const childPager = document.getElementById('childPager');
+  const childPagerInfo = document.getElementById('childPagerInfo');
+  const childPageSizeEl = document.getElementById('childPageSize');
+  let childPageIndex = 0;
+  let childPageSize = 10;
+
+  // Search by child name or purok (filters then re-renders the table)
   const searchInput = document.querySelector('.input-search');
   if (searchInput) {
     searchInput.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase().trim();
-      filterTable();
+      childPageIndex = 0;
+      renderChildTable();
     });
   }
 
@@ -314,7 +321,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const purokSelect = document.querySelector('.select-purok');
   if (purokSelect) {
     purokSelect.addEventListener('change', function() {
-      filterTable();
+      childPageIndex = 0;
+      renderChildTable();
+    });
+  }
+
+  // Rows per page
+  if (childPageSizeEl) {
+    childPageSizeEl.addEventListener('change', function() {
+      const val = this.value;
+      childPageSize = val === 'all' ? 'all' : (Number(val) || 10);
+      childPageIndex = 0;
+      renderChildTable();
     });
   }
 
@@ -404,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
       purok.records.forEach(rec => {
         if (rec.type === 'Child') {
           const status = computeStatus(rec.nextVisitDate, rec.lastVisitDate);
-          records.push({ rec, purok: purok.name, status });
+          records.push({ rec, purok: purok.name, purokKey: key, status });
         }
       });
     });
@@ -428,70 +446,274 @@ document.addEventListener('DOMContentLoaded', () => {
   const childStatusClass = { 'Completed': 'status-green', 'Due This Month': 'status-yellow', 'Overdue': 'status-red' };
   const childVaxColumnMap = { 'BCG': 7, 'OPV': 8, 'IPV': 9, 'PENTA': 10, 'PCV': 11, 'MCV1': 12, 'MCV2': 13 };
 
+  function buildChildRow(item) {
+    const { rec, purok, status } = item;
+    const tr = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    const nameStrong = document.createElement('strong');
+    nameStrong.textContent = rec.name;
+    nameCell.appendChild(nameStrong);
+    nameCell.appendChild(document.createElement('br'));
+    const nameCode = document.createElement('span');
+    nameCode.className = 'text-muted';
+    nameCode.textContent = rec.code;
+    nameCell.appendChild(nameCode);
+
+    const ageCell = document.createElement('td');
+    ageCell.innerHTML = `${computeAgeLabel(rec.birthDate)}<br><span class="${rec.sex === 'Female' ? 'text-female' : 'text-male'}">${rec.sex}</span>`;
+
+    const purokCell = document.createElement('td');
+    purokCell.textContent = purok;
+
+    const weightCell = document.createElement('td');
+    weightCell.textContent = String(rec.weight);
+    const heightCell = document.createElement('td');
+    heightCell.textContent = String(rec.height);
+    const tempCell = document.createElement('td');
+    tempCell.textContent = String(rec.temp);
+    const rrCell = document.createElement('td');
+    rrCell.innerHTML = `<span class="text-cyan font-bold">${String(rec.rr)}</span>`;
+
+    const vaxCodes = typeof VACCINES !== 'undefined' ? VACCINES : Object.keys(childVaxColumnMap);
+    const vaxCells = vaxCodes.map(vCode => {
+      const cell = document.createElement('td');
+      const has = Array.isArray(rec.vaccines) && rec.vaccines.includes(vCode);
+      cell.innerHTML = has ? '<span class="icon-check">&#10003;</span>' : '<span class="icon-cross">&#10007;</span>';
+      return cell;
+    });
+
+    const muacCell = document.createElement('td');
+    muacCell.innerHTML = `<strong>${String(rec.muac)}</strong>`;
+
+    const statusCell = document.createElement('td');
+    statusCell.innerHTML = `<span class="status-pill ${childStatusClass[status] || 'status-yellow'}">&bull; ${status}</span>`;
+
+    const actionCell = document.createElement('td');
+    actionCell.innerHTML = '<button class="btn-sm btn-outline update-btn">Update</button> <button class="btn-sm btn-subtle view-btn">View</button>';
+
+    tr.appendChild(nameCell);
+    tr.appendChild(ageCell);
+    tr.appendChild(purokCell);
+    tr.appendChild(weightCell);
+    tr.appendChild(heightCell);
+    tr.appendChild(tempCell);
+    tr.appendChild(rrCell);
+    vaxCells.forEach(c => tr.appendChild(c));
+    tr.appendChild(muacCell);
+    tr.appendChild(statusCell);
+    tr.appendChild(actionCell);
+
+    return tr;
+  }
+
   function renderChildTable() {
     const tbody = document.getElementById('childTbody');
     if (!tbody) return;
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const selectedPurok = purokSelect ? purokSelect.value.toLowerCase() : 'all';
+
+    const filtered = scopedChildren().filter(item => {
+      const name = (item.rec.name || '').toLowerCase();
+      const purok = (item.purok || '').toLowerCase();
+      const matchesSearch = !searchTerm || name.includes(searchTerm) || purok.includes(searchTerm);
+      const matchesPurok = selectedPurok === 'all' || item.purokKey === selectedPurok;
+      return matchesSearch && matchesPurok;
+    });
+
+    const pageSize = childPageSize === 'all' ? filtered.length : (Number(childPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+    if (childPageIndex >= totalPages) childPageIndex = totalPages - 1;
+    if (childPageIndex < 0) childPageIndex = 0;
+    const start = childPageIndex * pageSize;
+    const end = Math.min(start + pageSize, filtered.length);
+
     tbody.innerHTML = '';
 
-    scopedChildren().forEach(item => {
-      const { rec, purok, status } = item;
-      const tr = document.createElement('tr');
+    if (filtered.length === 0) {
+      const emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = '<td colspan="17" class="coverage-empty">No records match the current search &amp; filter.</td>';
+      tbody.appendChild(emptyTr);
+    }
 
-      const nameCell = document.createElement('td');
-      const nameStrong = document.createElement('strong');
-      nameStrong.textContent = rec.name;
-      nameCell.appendChild(nameStrong);
-      nameCell.appendChild(document.createElement('br'));
-      const nameCode = document.createElement('span');
-      nameCode.className = 'text-muted';
-      nameCode.textContent = rec.code;
-      nameCell.appendChild(nameCode);
+    filtered.slice(start, end).forEach(item => tbody.appendChild(buildChildRow(item)));
 
-      const ageCell = document.createElement('td');
-      ageCell.innerHTML = `${computeAgeLabel(rec.birthDate)}<br><span class="${rec.sex === 'Female' ? 'text-female' : 'text-male'}">${rec.sex}</span>`;
+    updateChildPager(filtered.length, start, end);
+  }
 
-      const purokCell = document.createElement('td');
-      purokCell.textContent = purok;
+  function updateChildPager(total, start, end) {
+    if (childPagerInfo) {
+      childPagerInfo.textContent = total === 0
+        ? 'Showing 0–0 of 0'
+        : `Showing ${start + 1}–${end} of ${total}`;
+    }
+    if (!childPager) return;
+    childPager.innerHTML = '';
 
-      const weightCell = document.createElement('td');
-      weightCell.textContent = String(rec.weight);
-      const heightCell = document.createElement('td');
-      heightCell.textContent = String(rec.height);
-      const tempCell = document.createElement('td');
-      tempCell.textContent = String(rec.temp);
-      const rrCell = document.createElement('td');
-      rrCell.innerHTML = `<span class="text-cyan font-bold">${String(rec.rr)}</span>`;
+    const pageSize = childPageSize === 'all' ? total : (Number(childPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
-      const vaxCodes = typeof VACCINES !== 'undefined' ? VACCINES : Object.keys(childVaxColumnMap);
-      const vaxCells = vaxCodes.map(vCode => {
-        const cell = document.createElement('td');
-        const has = Array.isArray(rec.vaccines) && rec.vaccines.includes(vCode);
-        cell.innerHTML = has ? '<span class="icon-check">&#10003;</span>' : '<span class="icon-cross">&#10007;</span>';
-        return cell;
+    const makeBtn = (label, page, active, disabled) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `pager-btn${active ? ' active' : ''}`;
+      b.textContent = label;
+      if (disabled) b.disabled = true;
+      b.addEventListener('click', () => {
+        childPageIndex = page;
+        renderChildTable();
       });
+      return b;
+    };
 
-      const muacCell = document.createElement('td');
-      muacCell.innerHTML = `<strong>${String(rec.muac)}</strong>`;
+    childPager.appendChild(makeBtn('‹ Prev', childPageIndex - 1, false, childPageIndex <= 0));
 
-      const statusCell = document.createElement('td');
-      statusCell.innerHTML = `<span class="status-pill ${childStatusClass[status] || 'status-yellow'}">&bull; ${status}</span>`;
+    const maxVisible = 7;
+    let startPage = 0;
+    let endPage = totalPages - 1;
+    if (totalPages > maxVisible) {
+      startPage = Math.max(0, childPageIndex - Math.floor(maxVisible / 2));
+      endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+      startPage = Math.max(0, endPage - maxVisible + 1);
+    }
+    if (startPage > 0) childPager.appendChild(makeBtn('1', 0, false, false));
+    if (startPage > 1) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      childPager.appendChild(ell);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      childPager.appendChild(makeBtn(String(i + 1), i, i === childPageIndex, false));
+    }
+    if (endPage < totalPages - 2) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      childPager.appendChild(ell);
+    }
+    if (endPage < totalPages - 1) childPager.appendChild(makeBtn(String(totalPages), totalPages - 1, false, false));
 
-      const actionCell = document.createElement('td');
-      actionCell.innerHTML = '<button class="btn-sm btn-outline update-btn">Update</button> <button class="btn-sm btn-subtle view-btn">View</button>';
+    childPager.appendChild(makeBtn('Next ›', childPageIndex + 1, false, childPageIndex >= totalPages - 1));
+  }
 
-      tr.appendChild(nameCell);
-      tr.appendChild(ageCell);
-      tr.appendChild(purokCell);
-      tr.appendChild(weightCell);
-      tr.appendChild(heightCell);
-      tr.appendChild(tempCell);
-      tr.appendChild(rrCell);
-      vaxCells.forEach(c => tr.appendChild(c));
-      tr.appendChild(muacCell);
-      tr.appendChild(statusCell);
-      tr.appendChild(actionCell);
+  // ========== VACCINATION COVERAGE PANEL ==========
+  function coverageBarClass(pct) {
+    if (pct >= 80) return 'green';
+    if (pct >= 50) return 'yellow';
+    return 'red';
+  }
 
-      tbody.appendChild(tr);
+  function renderChildStatusSummary() {
+    const children = scopedChildren();
+    const counts = { 'Overdue': 0, 'Due This Month': 0, 'Completed': 0 };
+    children.forEach(item => {
+      if (counts.hasOwnProperty(item.status)) counts[item.status] += 1;
+    });
+    const summary = document.querySelector('.filter-bar .status-summary');
+    if (!summary) return;
+    const statusLabels = { 'Overdue': 'Overdue', 'Due This Month': 'Due This Month', 'Completed': 'Completed' };
+    summary.querySelectorAll('.status-count').forEach((el, idx) => {
+      const label = ['Overdue', 'Due This Month', 'Completed'][idx];
+      const strong = el.querySelector('strong');
+      if (strong && label) strong.textContent = counts[label];
+    });
+  }
+
+  function renderChildCoverage() {
+    const container = document.getElementById('childVaccineCoverage');
+    if (!container) return;
+
+    const children = scopedChildren();
+    const total = children.length;
+    const codes = typeof VACCINES !== 'undefined' ? VACCINES : ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+
+    if (total === 0) {
+      container.innerHTML = '<p class="coverage-empty">No child records for your assigned puroks.</p>';
+      return;
+    }
+
+    container.innerHTML = codes.map(code => {
+      const covered = children.filter(item => Array.isArray(item.rec.vaccines) && item.rec.vaccines.includes(code)).length;
+      const notYet = total - covered;
+      const pct = Math.round((covered / total) * 100);
+      return `
+        <div class="coverage-card" data-cover="${code}" title="View who is vaccinated for ${code}">
+          <div class="coverage-card-head">
+            <span class="coverage-code">${code}</span>
+            <span class="coverage-pct text-${coverageBarClass(pct)}">${pct}%</span>
+          </div>
+          <div class="coverage-stats">
+            <span><strong>${covered}</strong>/<strong>${total}</strong> vaccinated</span>
+            <span class="${notYet > 0 ? 'text-red' : 'text-green'}">${notYet} not yet</span>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-bar ${coverageBarClass(pct)}" style="width: ${pct}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ========== COVERAGE DETAILS MODAL (who is vaccinated vs pending) ==========
+  function buildCoverageNameList(items) {
+    if (!items.length) return '<li class="coverage-list-empty">No one in this group</li>';
+    return items.map(item =>
+      `<li><i class="fa-solid fa-circle"></i><strong title="${item.rec.name}">${item.rec.name}</strong><span>Purok ${item.purok}</span></li>`
+    ).join('');
+  }
+
+  function openCoverageList(title, coveredItems, pendingItems, coveredHeading, pendingHeading) {
+    const modal = document.getElementById('coverageListModal');
+    if (!modal) return;
+    const titleEl = document.getElementById('coverageListTitle');
+    const coveredEl = document.getElementById('coverageListCovered');
+    const pendingEl = document.getElementById('coverageListPending');
+    const coveredTitleEl = document.getElementById('coverageListCoveredTitle');
+    const pendingTitleEl = document.getElementById('coverageListPendingTitle');
+    if (titleEl) titleEl.textContent = title;
+    if (coveredTitleEl) coveredTitleEl.textContent = coveredHeading;
+    if (pendingTitleEl) pendingTitleEl.textContent = pendingHeading;
+    if (coveredEl) coveredEl.innerHTML = buildCoverageNameList(coveredItems);
+    if (pendingEl) pendingEl.innerHTML = buildCoverageNameList(pendingItems);
+    modal.style.display = 'flex';
+  }
+
+  function closeCoverageList() {
+    const modal = document.getElementById('coverageListModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  const coverageListBtn = document.getElementById('closeCoverageListBtn');
+  if (coverageListBtn) coverageListBtn.addEventListener('click', closeCoverageList);
+  const coverageListModal = document.getElementById('coverageListModal');
+  if (coverageListModal) {
+    coverageListModal.addEventListener('click', function(e) {
+      if (e.target === coverageListModal) closeCoverageList();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCoverageList();
+  });
+
+  const childCoverageContainer = document.getElementById('childVaccineCoverage');
+  if (childCoverageContainer) {
+    childCoverageContainer.addEventListener('click', function(e) {
+      const card = e.target.closest ? e.target.closest('.coverage-card') : null;
+      if (!card) return;
+      const code = card.getAttribute('data-cover');
+      if (!code) return;
+      const all = scopedChildren();
+      const covered = all.filter(item => Array.isArray(item.rec.vaccines) && item.rec.vaccines.includes(code));
+      const pending = all.filter(item => !(Array.isArray(item.rec.vaccines) && item.rec.vaccines.includes(code)));
+      openCoverageList(
+        `${code} — Vaccination Coverage`,
+        covered,
+        pending,
+        `Vaccinated (${covered.length})`,
+        `Not yet vaccinated (${pending.length})`
+      );
     });
   }
 
@@ -507,43 +729,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   renderChildTable();
+  renderChildCoverage();
+  renderChildStatusSummary();
   applyPurokScoping();
 
-  // Combined filter function
-  function filterTable() {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const selectedPurok = purokSelect ? purokSelect.value.toLowerCase() : 'all';
-    const assignedNames = getAssignedPurokKeys() ? assignedPurokKeysToNames(getAssignedPurokKeys()) : null;
-    const rows = document.querySelectorAll('.data-table tbody tr');
-    
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-      const childName = row.querySelector('td:first-child strong')?.textContent.toLowerCase() || '';
-      const purokCell = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
-      
-      // Check search match
-      const matchesSearch = !searchTerm || childName.includes(searchTerm);
-      
-      // Check purok match
-      const matchesPurok = selectedPurok === 'all' || purokCell.includes(selectedPurok);
-
-      // Check assignment match (only assigned puroks are visible)
-      const matchesAssignment = belongsToAssignedPurok(purokCell, assignedNames);
-      
-      // Show row only if all conditions match
-      if (matchesSearch && matchesPurok && matchesAssignment) {
-        row.style.display = '';
-        visibleCount++;
-      } else {
-        row.style.display = 'none';
-      }
+  // Print button — expands to all filtered rows before printing
+  const btnPrintChild = document.getElementById('btnPrintChild');
+  if (btnPrintChild) {
+    btnPrintChild.addEventListener('click', () => {
+      const dateEl = document.querySelector('.print-date-text');
+      if (dateEl) dateEl.textContent = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+      const prevState = { page: childPageIndex, size: childPageSize };
+      childPageIndex = 0;
+      childPageSize = 'all';
+      renderChildTable();
+      setTimeout(() => {
+        window.print();
+        childPageIndex = prevState.page;
+        childPageSize = prevState.size;
+        renderChildTable();
+      }, 60);
     });
-    
-    console.log(`Filtered: ${visibleCount} records visible`);
   }
-  // Hide rows from puroks outside the BHW's assignment on load
-  filterTable();
+
   // Start clock
   setInterval(updateClock, 1000);
   updateClock();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maternal / Prenatal Module - e-Barangay Health</title>
+  <title>Maternal / Prenatal Module - E-Barangay Health</title>
   <link rel="stylesheet" href="../css/maternal.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/theme-override.css">
@@ -21,7 +21,7 @@
           <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
-          <h2>e-Barangay <span>Health</span></h2>
+          <h2>E-Barangay <span>Health</span></h2>
           <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
         </div>
       </div>
@@ -76,6 +76,15 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
+      <div class="print-header">
+        <div>
+          <h1>E-Barangay Health System</h1>
+          <p>Maternal / Prenatal Records — Barangay New Katipunan, Matanao, Davao del Sur</p>
+        </div>
+        <div class="print-date">
+          <strong>Printed:</strong> <span class="print-date-text"></span>
+        </div>
+      </div>
       <!-- TOP NAVIGATION HEADER -->
        <header class="top-header">
         <div class="header-right" style="margin-left: auto;">
@@ -98,6 +107,9 @@
         </div>
         <button class="btn-primary" id="btnEncodeMaternal">
           <i class="fa-solid fa-plus"></i> Encode Visit
+        </button>
+        <button class="btn-print no-print" id="btnPrintMaternal" title="Print the currently filtered records">
+          <i class="fa-solid fa-print"></i> Print Records
         </button>
       </section>
 
@@ -128,6 +140,17 @@
         </div>
       </div>
 
+      <!-- MATERNAL CARE COVERAGE PANEL -->
+      <section class="coverage-panel">
+        <div class="coverage-panel-header">
+          <div>
+            <h2><i class="fa-solid fa-heart-pulse text-cyan"></i> Maternal Care Coverage</h2>
+            <p>TT immunization reach, iron supplementation, and blood pressure monitoring</p>
+          </div>
+        </div>
+        <div id="maternalCoverageList" class="coverage-grid"></div>
+      </section>
+
       <!-- FULL RECORDS TABLE -->
       <div class="table-card">
         <table class="data-table">
@@ -149,6 +172,16 @@
             <!-- Maternal / prenatal records are rendered from js/purok-data.js by js/maternal.js -->
           </tbody>
         </table>
+        <div class="table-pagination no-print">
+          <span class="pagination-info" id="maternalPagerInfo">Showing 0–0 of 0</span>
+          <div class="pagination-buttons" id="maternalPager"></div>
+          <select class="page-size" id="maternalPageSize" title="Rows per page">
+            <option value="10">10 / page</option>
+            <option value="25">25 / page</option>
+            <option value="50">50 / page</option>
+            <option value="all">All</option>
+          </select>
+        </div>
       </div>
     </main>
 
@@ -399,6 +432,33 @@
           <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Update Record</button>
         </div>
       </form>
+    </div>
+  </div>
+  <!-- COVERAGE DETAILS MODAL -->
+  <div id="coverageListModal" class="modal">
+    <div class="modal-content coverage-list-modal">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div>
+            <h2 id="coverageListTitle">Coverage Details</h2>
+            <p>Maternal care coverage, person by person</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" id="closeCoverageListBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="coverage-list-grid">
+          <div class="coverage-list-col">
+            <h3 class="coverage-list-head covered" id="coverageListCoveredTitle">Covered</h3>
+            <ul class="coverage-name-list" id="coverageListCovered"></ul>
+          </div>
+          <div class="coverage-list-col">
+            <h3 class="coverage-list-head missing" id="coverageListPendingTitle">Not covered</h3>
+            <ul class="coverage-name-list" id="coverageListPending"></ul>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="../js/session.js"></script>

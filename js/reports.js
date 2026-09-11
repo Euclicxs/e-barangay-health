@@ -162,6 +162,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const totalDoses = VACCINE_ORDER.reduce((sum, v) => sum + vaccineCounts[v], 0);
 
+  // Maternal care coverage (TT ladder, iron supplementation, high-BP monitoring)
+  function parseBpForReports(bp) {
+    const parts = String(bp || '').split('/');
+    return { sys: parseInt(parts[0], 10) || 0, dia: parseInt(parts[1], 10) || 0 };
+  }
+  function isHighBpForReports(bp) {
+    const { sys, dia } = parseBpForReports(bp);
+    return sys >= 130 || dia >= 80;
+  }
+  const ttReach = [0, 0, 0, 0, 0, 0];
+  mothers.forEach(item => {
+    const dose = parseInt(String(item.rec.ttDose).replace(/\D/g, ''), 10) || 0;
+    for (let d = 1; d <= Math.min(dose, 5); d++) ttReach[d] += 1;
+  });
+  const ironCount = mothers.filter(item => !!item.rec.iron).length;
+  const highBpCount = mothers.filter(item => isHighBpForReports(item.rec.bp)).length;
+
   // Active BHWs across scoped puroks (distinct)
   const activeBhwIds = new Set();
   if (typeof getUsersByPurokKey === 'function') {
@@ -233,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (listEl) {
       listEl.innerHTML = VACCINE_ORDER.map(v => {
         const pct = vaccineCoverage[v];
-        return `<p><span class="dot ${rangeStatusClass(pct)}"></span> ${v}: <strong class="${rangeTextClass(pct)}">${pct}%</strong></p>`;
+        return `<p><span class="dot ${rangeStatusClass(pct)}"></span> ${v}: <strong class="${rangeTextClass(pct)}">${pct}%</strong> <span class="text-cyan" style="font-size:11px; font-weight:400;">(${vaccineCounts[v]}/${totalChildren})</span></p>`;
       }).join('');
       console.log('Vaccination coverage updated', vaccineCoverage);
     }
@@ -244,6 +261,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (strongEls[1]) strongEls[1].textContent = String(activeBhwCount);
     if (strongEls[2]) strongEls[2].textContent = `${coveragePct}%`;
     console.log(`BHW log: visits=${totalVisits}, active=${activeBhwCount}, coverage=${coveragePct}%`);
+  }
+  if (reportCards.length >= 4) {
+    const listEl = reportCards[3].querySelector('.report-stats-list');
+    if (listEl) {
+      const rows = [];
+      for (let d = 1; d <= 5; d++) {
+        const pct = totalMothers ? Math.round((ttReach[d] / totalMothers) * 100) : 0;
+        rows.push(`<p><span class="dot ${rangeStatusClass(pct)}"></span> TT ${d} Reached: <strong class="${rangeTextClass(pct)}">${pct}%</strong> <span class="text-cyan" style="font-size:11px; font-weight:400;">(${ttReach[d]}/${totalMothers})</span></p>`);
+      }
+      const ironPct = totalMothers ? Math.round((ironCount / totalMothers) * 100) : 0;
+      rows.push(`<p><span class="dot ${rangeStatusClass(ironPct)}"></span> Iron Supp.: <strong class="${rangeTextClass(ironPct)}">${ironPct}%</strong> <span class="text-cyan" style="font-size:11px; font-weight:400;">(${ironCount}/${totalMothers})</span></p>`);
+      const bpPct = totalMothers ? Math.round((highBpCount / totalMothers) * 100) : 0;
+      const bpDot = bpPct > 0 ? 'red-dot' : 'green-dot';
+      const bpText = bpPct > 0 ? 'text-red' : 'text-green';
+      rows.push(`<p><span class="dot ${bpDot}"></span> High BP: <strong class="${bpText}">${bpPct}%</strong> <span class="text-cyan" style="font-size:11px; font-weight:400;">(${highBpCount}/${totalMothers})</span></p>`);
+      listEl.innerHTML = rows.join('');
+      console.log(`Maternal coverage: iron=${ironCount}, highBP=${highBpCount}, ttReach=${ttReach.slice(1).join(',')}`);
+    }
   }
 
   // ========== CHARTS ==========
@@ -407,6 +442,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return csv;
   }
 
+  function buildMaternalCsv() {
+    let csv = 'Indicator,Reached,Total_Mothers,Percentage\n';
+    for (let d = 1; d <= 5; d++) {
+      const pct = totalMothers ? Math.round((ttReach[d] / totalMothers) * 100) : 0;
+      csv += `TT ${d} Reached,${ttReach[d]},${totalMothers},${pct}%\n`;
+    }
+    const ironPct = totalMothers ? Math.round((ironCount / totalMothers) * 100) : 0;
+    csv += `Iron Supplementation,${ironCount},${totalMothers},${ironPct}%\n`;
+    const bpPct = totalMothers ? Math.round((highBpCount / totalMothers) * 100) : 0;
+    csv += `High BP (>= 130/80),${highBpCount},${totalMothers},${bpPct}%\n`;
+    return csv;
+  }
+
   function triggerDownload(content, filename) {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -423,30 +471,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (totalChildren === 0 && totalMothers === 0) return buildMonthlyCsv();
     if (title.includes('Vaccination')) return buildVaccinationCsv();
     if (title.includes('Accomplishment')) return buildMonthlyCsv();
+    if (title.includes('Maternal') || title.includes('Prenatal')) return buildMaternalCsv();
     if (title.includes('BHW')) return buildBhwCsv();
     return buildMonthlyCsv();
   }
 
-  // Download PDF buttons
+  // Download PDF buttons — open the print dialog scoped to that report card
   const pdfButtons = document.querySelectorAll('.btn-report-action:not(.btn-outline)');
   pdfButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const reportCard = this.closest('.report-card');
-      const reportTitle = reportCard.querySelector('h3')?.textContent || 'Report';
+      const reportTitle = reportCard && reportCard.querySelector('h3') ? reportCard.querySelector('h3').textContent : 'Report';
       const period = dateDisplay ? dateDisplay.value : 'October 2026';
 
       console.log(`Generating PDF: ${reportTitle} for ${period}`);
 
-      const originalText = this.innerHTML;
-      this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
-      this.disabled = true;
+      const dateEl = document.querySelector('.print-date-text');
+      if (dateEl) dateEl.textContent = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
 
-      setTimeout(() => {
-        this.innerHTML = originalText;
-        this.disabled = false;
-        const filename = `${reportTitle.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
-        alert(`✅ PDF Generated!\n\nFile: ${filename}\n\n📊 Includes charts and statistics computed from the current records.`);
-      }, 2000);
+      if (reportCard) reportCard.classList.add('print-this');
+      window.print();
+      if (reportCard) reportCard.classList.remove('print-this');
     });
   });
 
@@ -476,12 +521,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Print buttons (if any)
+  // Print buttons (if any) — open the print dialog for the current report view
   const printButtons = document.querySelectorAll('.btn-print');
   printButtons.forEach(btn => {
     btn.addEventListener('click', function() {
-      const period = dateDisplay ? dateDisplay.value : 'October 2026';
-      alert(`🖨️ Print Preview\n\nOpening print dialog for ${period} report...`);
+      const dateEl = document.querySelector('.print-date-text');
+      if (dateEl) dateEl.textContent = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+      window.print();
     });
   });
 

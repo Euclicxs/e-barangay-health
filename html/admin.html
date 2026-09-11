@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - e-Barangay Health System</title>
+  <title>Admin Dashboard - E-Barangay Health System</title>
   <link rel="stylesheet" href="../css/admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
@@ -18,7 +18,7 @@
           <img src="../assets/logo.png" alt="e-Barangay Logo" class="sidebar-png-logo">
         </div>
         <div class="brand-text">
-          <h2>E-Barangay <span>Health</span></h2>
+          <h2>E -Barangay <span>Health</span></h2>
           <p>Brgy. New Katipunan<br>Matanao, Davao del Sur</p>
         </div>
       </div>
@@ -75,11 +75,7 @@
     <main class="main-content">
       <!-- TOP NAVIGATION HEADER -->
       <header class="top-header">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="searchUsers" placeholder="Search BHW users...">
-        </div>
-        <div class="header-right">
+        <div class="header-right" style="margin-left: auto;">
           <div class="location-tag">
             <i class="fa-solid fa-location-dot"></i> Brgy. New Katipunan, Matanao
           </div>
@@ -92,7 +88,7 @@
       </header>
 
       <!-- USER MANAGEMENT SECTION -->
-      <section id="user-management-section" class="content-section active">
+      <section id="user-management-section" class="content-section active no-print">
         <div class="section-header">
           <h1><i class="fa-solid fa-user-shield"></i> User Management</h1>
           <p>Manage Barangay Health Worker accounts and access permissions</p>
@@ -161,7 +157,7 @@
       </section>
 
       <!-- LOGIN HISTORY SECTION -->
-      <section id="login-history-section" class="content-section">
+      <section id="login-history-section" class="content-section no-print">
         <div class="section-header">
           <h1><i class="fa-solid fa-clock-rotate-left"></i> Login History</h1>
           <p>Monitor recent BHW access and login activity</p>
@@ -200,6 +196,10 @@
 
       <!-- PUROK MASTERLISTS SECTION -->
       <section id="purok-masterlist-section" class="content-section">
+        <div class="print-header">
+          <div>
+          </div>
+        </div>
         <div class="section-header">
           <h1><i class="fa-solid fa-clipboard-list"></i> Purok Masterlists</h1>
           <p>Community health roster — Brgy. New Katipunan, Matanao</p>
@@ -209,14 +209,26 @@
         </div>
 
         <!-- PUROK FILTER TABS -->
-        <div class="purok-tabs">
-          <button class="purok-tab active" data-purok="calachuchi">Calachuchi</button>
-          <button class="purok-tab" data-purok="bougainvillea">Bougainvillea <span class="tab-dot dot-red"></span></button>
-          <button class="purok-tab" data-purok="walingwaling">Walingwaling <span class="tab-dot dot-red"></span></button>
-          <button class="purok-tab" data-purok="sampaguita">Sampaguita <span class="tab-dot dot-red"></span></button>
-          <button class="purok-tab" data-purok="santan">Santan <span class="tab-dot dot-red"></span></button>
-          <button class="purok-tab" data-purok="rose">Rose</button>
-          <button class="purok-tab" data-purok="daisy">Daisy</button>
+        <div class="purok-tabs-row">
+          <div class="purok-tabs">
+            <button class="purok-tab active" data-purok="calachuchi">Calachuchi</button>
+            <button class="purok-tab" data-purok="bougainvillea">Bougainvillea <span class="tab-dot dot-red"></span></button>
+            <button class="purok-tab" data-purok="walingwaling">Walingwaling <span class="tab-dot dot-red"></span></button>
+            <button class="purok-tab" data-purok="sampaguita">Sampaguita <span class="tab-dot dot-red"></span></button>
+            <button class="purok-tab" data-purok="santan">Santan <span class="tab-dot dot-red"></span></button>
+            <button class="purok-tab" data-purok="rose">Rose</button>
+            <button class="purok-tab" data-purok="daisy">Daisy</button>
+          </div>
+          <select id="purokMasterFilter" class="purok-master-filter" title="Filter masterlists">
+            <option value="all">All Puroks</option>
+            <option value="calachuchi">Calachuchi</option>
+            <option value="bougainvillea">Bougainvillea</option>
+            <option value="walingwaling">Walingwaling</option>
+            <option value="sampaguita">Sampaguita</option>
+            <option value="santan">Santan</option>
+            <option value="rose">Rose</option>
+            <option value="daisy">Daisy</option>
+          </select>
         </div>
 
         <!-- PUROK SUMMARY CARDS -->
@@ -255,13 +267,17 @@
         <div class="content-card table-card">
           <div class="card-header">
             <h3 id="table-title">Purok Calachuchi — Health Records</h3>
-            <span class="entries-count" id="entries-count">0 entries</span>
+            <div class="masterlist-toolbar">
+              <input type="text" id="masterlistSearch" class="masterlist-search no-print" placeholder="Search name, address, or purok...">
+              <span class="entries-count" id="entries-count">0 entries</span>
+            </div>
           </div>
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Child / Mother Name</th>
+                  <th id="masterlistPurokCol" class="masterlist-purok-col">Purok</th>
                   <th>Type</th>
                   <th>Purok Address</th>
                   <th>Immunization Status</th>
@@ -274,11 +290,21 @@
               </tbody>
             </table>
           </div>
+          <div class="table-pagination no-print">
+            <span class="pagination-info" id="masterlistPagerInfo">Showing 0–0 of 0</span>
+            <div class="pagination-buttons" id="masterlistPager"></div>
+            <select class="page-size" id="masterlistPageSize" title="Rows per page">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+              <option value="all">All</option>
+            </select>
+          </div>
         </div>
       </section>
 
       <!-- DATA ANALYTICS SECTION -->
-      <section id="data-analytics-section" class="content-section">
+      <section id="data-analytics-section" class="content-section no-print">
         <div class="section-header">
           <h1><i class="fa-solid fa-chart-pie"></i> Data Analytics</h1>
           <p>Descriptive & Prescriptive analytics for Brgy. New Katipunan health records</p>
@@ -316,6 +342,30 @@
           </div>
         </div>
 
+        <!-- COVERAGE STAT CARDS -->
+        <div class="admin-stats-grid analytics-stats coverage-stats">
+          <div class="stat-card admin-blue">
+            <h2 id="analyticsVaccineCoverage">0%</h2>
+            <h3>Avg. Vaccine Coverage</h3>
+            <p>Across all immunization types</p>
+          </div>
+          <div class="stat-card admin-green">
+            <h2 id="analyticsFullyProtected">0</h2>
+            <h3>Fully Protected Children</h3>
+            <p>With all routine vaccine doses</p>
+          </div>
+          <div class="stat-card admin-yellow">
+            <h2 id="analyticsTt5Coverage">0%</h2>
+            <h3>TT5 Completed Mothers</h3>
+            <p>Protective tetanus toxoid level</p>
+          </div>
+          <div class="stat-card admin-red">
+            <h2 id="analyticsHighBpMothers">0</h2>
+            <h3>Elevated BP Mothers</h3>
+            <p>Needing close monitoring</p>
+          </div>
+        </div>
+
         <!-- CHARTS ROW -->
         <div class="analytics-charts-grid">
           <!-- BAR CHART: Records per Purok -->
@@ -339,13 +389,58 @@
           </div>
         </div>
 
-        <!-- VACCINE COVERAGE RATE -->
+        <!-- VACCINE COVERAGE -->
         <div class="content-card">
           <div class="card-header">
             <h3><i class="fa-solid fa-capsules text-cyan"></i> Vaccination Coverage by Type</h3>
+            <button type="button" class="btn-export no-print" id="btnExportVaccineCsv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
           </div>
-          <div class="coverage-list" id="vaccCoverageList">
+          <div class="coverage-grid" id="vaccCoverageList">
             <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- MATERNAL / PRENATAL COVERAGE -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-person-pregnant text-cyan"></i> Maternal &amp; Prenatal Coverage</h3>
+            <button type="button" class="btn-export no-print" id="btnExportMaternalCsv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          </div>
+          <div class="coverage-grid" id="maternalCoverageList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- TOP VACCINE GAPS -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-triangle-exclamation text-cyan"></i> Top Vaccine Gaps</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="vaccineGapChart"></canvas>
+          </div>
+        </div>
+
+        <!-- PER-PUROK COVERAGE TABLE -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-table-list text-cyan"></i> Coverage per Purok</h3>
+          </div>
+          <div class="table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>Purok</th>
+                  <th>Children</th>
+                  <th>Mothers</th>
+                  <th>Fully Vaccinated</th>
+                  <th>TT5 Reach</th>
+                  <th>Iron</th>
+                  <th>Elevated BP</th>
+                </tr>
+              </thead>
+              <tbody id="perPurokCoverageBody"></tbody>
+            </table>
           </div>
         </div>
 
@@ -492,6 +587,34 @@
       <div class="modal-actions">
         <button class="btn-danger" id="btnConfirmDelete">Delete Account</button>
         <button class="btn-secondary" id="btnCancelDeleteModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COVERAGE DETAILS MODAL -->
+  <div id="coverageListModal" class="modal">
+    <div class="modal-content coverage-list-modal">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon"><i class="fa-solid fa-shield-virus"></i></div>
+          <div>
+            <h2 id="coverageListTitle">Coverage Details</h2>
+            <p>Who is covered and who is still pending</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="closeCoverageListBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="coverage-list-grid">
+          <div class="coverage-list-col">
+            <h3 class="coverage-list-head covered" id="coverageListCoveredTitle">Covered</h3>
+            <ul class="coverage-name-list" id="coverageListCovered"></ul>
+          </div>
+          <div class="coverage-list-col">
+            <h3 class="coverage-list-head missing" id="coverageListPendingTitle">Not covered</h3>
+            <ul class="coverage-name-list" id="coverageListPending"></ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>

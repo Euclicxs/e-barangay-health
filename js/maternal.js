@@ -89,6 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.querySelector('.filter-bar input[type="text"]');
   const purokSelect = document.querySelector('.select-purok');
 
+  // Pagination state
+  const maternalPager = document.getElementById('maternalPager');
+  const maternalPagerInfo = document.getElementById('maternalPagerInfo');
+  const maternalPageSizeEl = document.getElementById('maternalPageSize');
+  let maternalPageIndex = 0;
+  let maternalPageSize = 10;
+
   // ========== PUROK SCOPING (only assigned puroks) ==========
   function getAssignedPurokKeys() {
     if (typeof getCurrentUserAssignedPuroks === 'function') {
@@ -161,39 +168,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applyPurokScoping();
 
-  function filterTable() {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const selectedPurok = purokSelect ? purokSelect.value.toLowerCase() : 'all';
-    const assignedNames = getAssignedPurokKeys() ? assignedPurokKeysToNames(getAssignedPurokKeys()) : null;
-    const rows = document.querySelectorAll('.data-table tbody tr');
-    
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-      const motherName = row.querySelector('td:first-child strong')?.textContent.toLowerCase() || '';
-      const purokCell = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-      
-      const matchesSearch = !searchTerm || motherName.includes(searchTerm);
-      const matchesPurok = selectedPurok === 'all' || purokCell.includes(selectedPurok);
-      const matchesAssignment = belongsToAssignedPurok(purokCell, assignedNames);
-      
-      if (matchesSearch && matchesPurok && matchesAssignment) {
-        row.style.display = '';
-        visibleCount++;
-      } else {
-        row.style.display = 'none';
-      }
-    });
-    
-    console.log(`Filtered: ${visibleCount} records visible`);
-  }
-
   if (searchInput) {
-    searchInput.addEventListener('input', filterTable);
+    searchInput.addEventListener('input', () => {
+      maternalPageIndex = 0;
+      renderMaternalTable();
+    });
   }
 
   if (purokSelect) {
-    purokSelect.addEventListener('change', filterTable);
+    purokSelect.addEventListener('change', () => {
+      maternalPageIndex = 0;
+      renderMaternalTable();
+    });
+  }
+
+  // Rows per page
+  if (maternalPageSizeEl) {
+    maternalPageSizeEl.addEventListener('change', function() {
+      const val = this.value;
+      maternalPageSize = val === 'all' ? 'all' : (Number(val) || 10);
+      maternalPageIndex = 0;
+      renderMaternalTable();
+    });
   }
 
   // ========== TABLE RENDERING (from shared purok data) ==========
@@ -212,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
       purok.records.forEach(rec => {
         if (rec.type === 'Mother') {
           const status = computeStatus(rec.nextVisitDate, rec.lastVisitDate);
-          records.push({ rec, purok: purok.name, status });
+          records.push({ rec, purok: purok.name, purokKey: key, status });
         }
       });
     });
@@ -221,75 +217,361 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const maternalStatusClass = { 'Completed': 'status-green', 'Due This Month': 'status-yellow', 'Overdue': 'status-red' };
 
+  function buildMotherRow(item) {
+    const { rec, purok, status } = item;
+    const tr = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    const nameStrong = document.createElement('strong');
+    nameStrong.style.color = 'white';
+    nameStrong.style.display = 'block';
+    nameStrong.textContent = rec.name;
+    const nameCode = document.createElement('span');
+    nameCode.className = 'text-muted';
+    nameCode.textContent = rec.code;
+    nameCell.appendChild(nameStrong);
+    nameCell.appendChild(nameCode);
+
+    const purokCell = document.createElement('td');
+    purokCell.textContent = purok;
+
+    const weightCell = document.createElement('td');
+    weightCell.textContent = String(rec.weight);
+
+    const isHighBP = parseInt(String(rec.bp).split('/')[0], 10) >= 130;
+    const bpCell = document.createElement('td');
+    bpCell.className = isHighBP ? 'text-red' : 'text-green';
+    bpCell.textContent = rec.bp;
+
+    const prCell = document.createElement('td');
+    prCell.textContent = String(rec.pr);
+
+    const tempCell = document.createElement('td');
+    tempCell.textContent = String(rec.temp);
+
+    const ttCell = document.createElement('td');
+    ttCell.innerHTML = `<span class="badge-tt">${rec.ttDose}</span>`;
+
+    const ironCell = document.createElement('td');
+    ironCell.innerHTML = rec.iron
+      ? '<i class="fa-solid fa-square-check text-green" style="font-size: 14px;"></i>'
+      : '<i class="fa-solid fa-square-xmark text-red" style="font-size: 14px;"></i>';
+
+    const statusCell = document.createElement('td');
+    statusCell.innerHTML = `<span class="status-pill ${maternalStatusClass[status] || 'status-yellow'}">&bull; ${status}</span>`;
+
+    const actionCell = document.createElement('td');
+    actionCell.style.textAlign = 'center';
+    actionCell.innerHTML = '<button class="btn-sm btn-outline">Update</button> <button class="btn-sm btn-subtle">View</button>';
+
+    tr.appendChild(nameCell);
+    tr.appendChild(purokCell);
+    tr.appendChild(weightCell);
+    tr.appendChild(bpCell);
+    tr.appendChild(prCell);
+    tr.appendChild(tempCell);
+    tr.appendChild(ttCell);
+    tr.appendChild(ironCell);
+    tr.appendChild(statusCell);
+    tr.appendChild(actionCell);
+
+    return tr;
+  }
+
   function renderMaternalTable() {
     const tbody = document.getElementById('maternalTbody');
     if (!tbody) return;
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const selectedPurok = purokSelect ? purokSelect.value.toLowerCase() : 'all';
+
+    const filtered = scopedMothers().filter(item => {
+      const name = (item.rec.name || '').toLowerCase();
+      const purok = (item.purok || '').toLowerCase();
+      const ttDose = String(item.rec.ttDose || '').toLowerCase();
+      const matchesSearch = !searchTerm || name.includes(searchTerm) || purok.includes(searchTerm) || ttDose.includes(searchTerm);
+      const matchesPurok = selectedPurok === 'all' || item.purokKey === selectedPurok;
+      return matchesSearch && matchesPurok;
+    });
+
+    const pageSize = maternalPageSize === 'all' ? filtered.length : (Number(maternalPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+    if (maternalPageIndex >= totalPages) maternalPageIndex = totalPages - 1;
+    if (maternalPageIndex < 0) maternalPageIndex = 0;
+    const start = maternalPageIndex * pageSize;
+    const end = Math.min(start + pageSize, filtered.length);
+
     tbody.innerHTML = '';
 
-    scopedMothers().forEach(item => {
-      const { rec, purok, status } = item;
-      const tr = document.createElement('tr');
+    if (filtered.length === 0) {
+      const emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = '<td colspan="10" class="coverage-empty">No records match the current search &amp; filter.</td>';
+      tbody.appendChild(emptyTr);
+    }
 
-      const nameCell = document.createElement('td');
-      const nameStrong = document.createElement('strong');
-      nameStrong.style.color = 'white';
-      nameStrong.style.display = 'block';
-      nameStrong.textContent = rec.name;
-      const nameCode = document.createElement('span');
-      nameCode.className = 'text-muted';
-      nameCode.textContent = rec.code;
-      nameCell.appendChild(nameStrong);
-      nameCell.appendChild(nameCode);
+    filtered.slice(start, end).forEach(item => tbody.appendChild(buildMotherRow(item)));
 
-      const purokCell = document.createElement('td');
-      purokCell.textContent = purok;
+    updateMaternalPager(filtered.length, start, end);
+  }
 
-      const weightCell = document.createElement('td');
-      weightCell.textContent = String(rec.weight);
+  function updateMaternalPager(total, start, end) {
+    if (maternalPagerInfo) {
+      maternalPagerInfo.textContent = total === 0
+        ? 'Showing 0–0 of 0'
+        : `Showing ${start + 1}–${end} of ${total}`;
+    }
+    if (!maternalPager) return;
+    maternalPager.innerHTML = '';
 
-      const isHighBP = parseInt(String(rec.bp).split('/')[0], 10) >= 130;
-      const bpCell = document.createElement('td');
-      bpCell.className = isHighBP ? 'text-red' : 'text-green';
-      bpCell.textContent = rec.bp;
+    const pageSize = maternalPageSize === 'all' ? total : (Number(maternalPageSize) || 10);
+    const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
-      const prCell = document.createElement('td');
-      prCell.textContent = String(rec.pr);
+    const makeBtn = (label, page, active, disabled) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `pager-btn${active ? ' active' : ''}`;
+      b.textContent = label;
+      if (disabled) b.disabled = true;
+      b.addEventListener('click', () => {
+        maternalPageIndex = page;
+        renderMaternalTable();
+      });
+      return b;
+    };
 
-      const tempCell = document.createElement('td');
-      tempCell.textContent = String(rec.temp);
+    maternalPager.appendChild(makeBtn('‹ Prev', maternalPageIndex - 1, false, maternalPageIndex <= 0));
 
-      const ttCell = document.createElement('td');
-      ttCell.innerHTML = `<span class="badge-tt">${rec.ttDose}</span>`;
+    const maxVisible = 7;
+    let startPage = 0;
+    let endPage = totalPages - 1;
+    if (totalPages > maxVisible) {
+      startPage = Math.max(0, maternalPageIndex - Math.floor(maxVisible / 2));
+      endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+      startPage = Math.max(0, endPage - maxVisible + 1);
+    }
+    if (startPage > 0) maternalPager.appendChild(makeBtn('1', 0, false, false));
+    if (startPage > 1) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      maternalPager.appendChild(ell);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      maternalPager.appendChild(makeBtn(String(i + 1), i, i === maternalPageIndex, false));
+    }
+    if (endPage < totalPages - 2) {
+      const ell = document.createElement('span');
+      ell.className = 'pager-ellipsis';
+      ell.textContent = '…';
+      maternalPager.appendChild(ell);
+    }
+    if (endPage < totalPages - 1) maternalPager.appendChild(makeBtn(String(totalPages), totalPages - 1, false, false));
 
-      const ironCell = document.createElement('td');
-      ironCell.innerHTML = rec.iron
-        ? '<i class="fa-solid fa-square-check text-green" style="font-size: 14px;"></i>'
-        : '<i class="fa-solid fa-square-xmark text-red" style="font-size: 14px;"></i>';
+    maternalPager.appendChild(makeBtn('Next ›', maternalPageIndex + 1, false, maternalPageIndex >= totalPages - 1));
+  }
 
-      const statusCell = document.createElement('td');
-      statusCell.innerHTML = `<span class="status-pill ${maternalStatusClass[status] || 'status-yellow'}">&bull; ${status}</span>`;
+  // ========== MATERNAL CARE COVERAGE PANEL ==========
+  function parseBp(bp) {
+    const parts = String(bp || '').split('/');
+    return {
+      sys: parseInt(parts[0], 10) || 0,
+      dia: parseInt(parts[1], 10) || 0
+    };
+  }
 
-      const actionCell = document.createElement('td');
-      actionCell.style.textAlign = 'center';
-      actionCell.innerHTML = '<button class="btn-sm btn-outline">Update</button> <button class="btn-sm btn-subtle">View</button>';
+  function isHighBP(bp) {
+    const { sys, dia } = parseBp(bp);
+    return sys >= 130 || dia >= 80;
+  }
 
-      tr.appendChild(nameCell);
-      tr.appendChild(purokCell);
-      tr.appendChild(weightCell);
-      tr.appendChild(bpCell);
-      tr.appendChild(prCell);
-      tr.appendChild(tempCell);
-      tr.appendChild(ttCell);
-      tr.appendChild(ironCell);
-      tr.appendChild(statusCell);
-      tr.appendChild(actionCell);
+  function maternalBarClass(pct) {
+    if (pct >= 80) return 'green';
+    if (pct >= 50) return 'yellow';
+    return 'red';
+  }
 
-      tbody.appendChild(tr);
+  function maternalCoverageCardHead(code, pct, alertLabel) {
+    const barClass = alertLabel ? 'red' : maternalBarClass(pct);
+    return `
+      <div class="coverage-card-head">
+        <span class="coverage-code">${code}</span>
+        <span class="coverage-pct text-${alertLabel ? 'red' : barClass}">${pct}%</span>
+      </div>
+    `;
+  }
+
+  function renderMaternalStatusSummary() {
+    const mothers = scopedMothers();
+    const counts = { 'Overdue': 0, 'Due This Month': 0, 'Completed': 0 };
+    mothers.forEach(item => {
+      if (counts.hasOwnProperty(item.status)) counts[item.status] += 1;
+    });
+    const summary = document.querySelector('.filter-bar .status-summary');
+    if (!summary) return;
+    summary.querySelectorAll('strong').forEach((strong, idx) => {
+      const label = ['Overdue', 'Due This Month', 'Completed'][idx];
+      if (label) strong.textContent = counts[label];
+    });
+  }
+
+  function renderMaternalCoverage() {
+    const container = document.getElementById('maternalCoverageList');
+    if (!container) return;
+
+    const mothers = scopedMothers();
+    const total = mothers.length;
+
+    if (total === 0) {
+      container.innerHTML = '<p class="coverage-empty">No maternal records for your assigned puroks.</p>';
+      return;
+    }
+
+    const ttCards = [];
+    for (let dose = 1; dose <= 5; dose++) {
+      const reached = mothers.filter(item => (parseInt(String(item.rec.ttDose).replace(/\D/g, ''), 10) || 0) >= dose).length;
+      const pct = Math.round((reached / total) * 100);
+      const notYet = total - reached;
+      ttCards.push(`
+        <div class="coverage-card" data-cover="tt-${dose}" title="View who has reached TT ${dose}">
+          ${maternalCoverageCardHead(`TT ${dose}`, pct)}
+          <div class="coverage-stats">
+            <span><strong>${reached}</strong>/<strong>${total}</strong> reached</span>
+            <span class="${notYet > 0 ? 'text-red' : 'text-green'}">${notYet} not yet</span>
+          </div>
+          <div class="progress-bg"><div class="progress-bar ${maternalBarClass(pct)}" style="width: ${pct}%;"></div></div>
+        </div>
+      `);
+    }
+
+    const ironCount = mothers.filter(item => !!item.rec.iron).length;
+    const ironPct = Math.round((ironCount / total) * 100);
+    const ironCard = `
+      <div class="coverage-card" data-cover="iron" title="View who is taking iron">
+        ${maternalCoverageCardHead('IRON', ironPct)}
+        <div class="coverage-stats">
+          <span><strong>${ironCount}</strong>/<strong>${total}</strong> on iron</span>
+          <span class="${(total - ironCount) > 0 ? 'text-red' : 'text-green'}">${total - ironCount} not taking</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar ${maternalBarClass(ironPct)}" style="width: ${ironPct}%;"></div></div>
+      </div>
+    `;
+
+    const bpCount = mothers.filter(item => isHighBP(item.rec.bp)).length;
+    const bpPct = Math.round((bpCount / total) * 100);
+    const bpCard = `
+      <div class="coverage-card" data-cover="bp" title="View who has elevated blood pressure">
+        ${maternalCoverageCardHead('HIGH BP', bpPct, bpCount > 0)}
+        <div class="coverage-stats">
+          <span><strong>${bpCount}</strong>/<strong>${total}</strong> elevated</span>
+          <span class="${bpCount > 0 ? 'text-red' : 'text-green'}">${bpCount === 0 ? 'none' : 'monitor closely'}</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar red" style="width: ${bpPct}%;"></div></div>
+      </div>
+    `;
+
+    container.innerHTML = ttCards.join('') + ironCard + bpCard;
+  }
+
+  // ========== COVERAGE DETAILS MODAL (who is covered vs not) ==========
+  function buildCoverageNameList(items) {
+    if (!items.length) return '<li class="coverage-list-empty">No one in this group</li>';
+    return items.map(item =>
+      `<li><i class="fa-solid fa-circle"></i><strong title="${item.rec.name}">${item.rec.name}</strong><span>Purok ${item.purok}</span></li>`
+    ).join('');
+  }
+
+  function openCoverageList(title, coveredItems, pendingItems, coveredHeading, pendingHeading) {
+    const modal = document.getElementById('coverageListModal');
+    if (!modal) return;
+    const titleEl = document.getElementById('coverageListTitle');
+    const coveredEl = document.getElementById('coverageListCovered');
+    const pendingEl = document.getElementById('coverageListPending');
+    const coveredTitleEl = document.getElementById('coverageListCoveredTitle');
+    const pendingTitleEl = document.getElementById('coverageListPendingTitle');
+    if (titleEl) titleEl.textContent = title;
+    if (coveredTitleEl) coveredTitleEl.textContent = coveredHeading;
+    if (pendingTitleEl) pendingTitleEl.textContent = pendingHeading;
+    if (coveredEl) coveredEl.innerHTML = buildCoverageNameList(coveredItems);
+    if (pendingEl) pendingEl.innerHTML = buildCoverageNameList(pendingItems);
+    modal.style.display = 'flex';
+  }
+
+  function closeCoverageList() {
+    const modal = document.getElementById('coverageListModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  const coverageListBtn = document.getElementById('closeCoverageListBtn');
+  if (coverageListBtn) coverageListBtn.addEventListener('click', closeCoverageList);
+  const coverageListModal = document.getElementById('coverageListModal');
+  if (coverageListModal) {
+    coverageListModal.addEventListener('click', function(e) {
+      if (e.target === coverageListModal) closeCoverageList();
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCoverageList();
+  });
+
+  const maternalCoverageContainer = document.getElementById('maternalCoverageList');
+  if (maternalCoverageContainer) {
+    maternalCoverageContainer.addEventListener('click', function(e) {
+      const card = e.target.closest ? e.target.closest('.coverage-card') : null;
+      if (!card) return;
+      const key = card.getAttribute('data-cover');
+      if (!key) return;
+      const mothers = scopedMothers();
+      let covered = [];
+      let pending = [];
+      let title = 'Coverage Details';
+      let coveredHeading = 'Covered';
+      let pendingHeading = 'Not covered';
+      if (key.indexOf('tt-') === 0) {
+        const dose = parseInt(key.split('-')[1], 10) || 1;
+        title = `TT ${dose} — Immunization Coverage`;
+        covered = mothers.filter(item => (parseInt(String(item.rec.ttDose).replace(/\D/g, ''), 10) || 0) >= dose);
+        pending = mothers.filter(item => !((parseInt(String(item.rec.ttDose).replace(/\D/g, ''), 10) || 0) >= dose));
+        coveredHeading = `Reached TT ${dose} (${covered.length})`;
+        pendingHeading = `Not yet reached (${pending.length})`;
+      } else if (key === 'iron') {
+        title = 'IRON — Iron Supplementation';
+        covered = mothers.filter(item => !!item.rec.iron);
+        pending = mothers.filter(item => !item.rec.iron);
+        coveredHeading = `Taking iron (${covered.length})`;
+        pendingHeading = `Not taking (${pending.length})`;
+      } else if (key === 'bp') {
+        title = 'HIGH BP — Blood Pressure Monitoring';
+        covered = mothers.filter(item => isHighBP(item.rec.bp));
+        pending = mothers.filter(item => !isHighBP(item.rec.bp));
+        coveredHeading = `Elevated BP (${covered.length})`;
+        pendingHeading = `Normal BP (${pending.length})`;
+      }
+      openCoverageList(title, covered, pending, coveredHeading, pendingHeading);
     });
   }
 
   renderMaternalTable();
-  filterTable();
+  renderMaternalCoverage();
+  renderMaternalStatusSummary();
+
+  // Print button — expands to all filtered rows before printing
+  const btnPrintMaternal = document.getElementById('btnPrintMaternal');
+  if (btnPrintMaternal) {
+    btnPrintMaternal.addEventListener('click', () => {
+      const dateEl = document.querySelector('.print-date-text');
+      if (dateEl) dateEl.textContent = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+      const prevState = { page: maternalPageIndex, size: maternalPageSize };
+      maternalPageIndex = 0;
+      maternalPageSize = 'all';
+      renderMaternalTable();
+      setTimeout(() => {
+        window.print();
+        maternalPageIndex = prevState.page;
+        maternalPageSize = prevState.size;
+        renderMaternalTable();
+      }, 60);
+    });
+  }
 
   // ========== VIEW AND UPDATE MODAL HANDLERS ==========
   

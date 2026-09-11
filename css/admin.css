@@ -2524,9 +2524,44 @@ button:not([class*="btn"]) {
 .purok-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
   overflow-x: auto;
   padding-bottom: 4px;
+  flex: 1;
+}
+
+.purok-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.purok-master-filter {
+  background-color: var(--bg-card, #ffffff);
+  color: #1e293b;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.purok-master-filter:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+/* Purok column shown only in the All-Puroks view */
+.masterlist-purok-col {
+  display: none;
+}
+.masterlist-purok-col.show {
+  display: table-cell;
 }
 
 .tab-dot {
@@ -2718,4 +2753,285 @@ button:not([class*="btn"]) {
 .assigned-puroks-cell .purok-tag-empty {
   color: #64748b;
   font-size: 12px;
+}
+
+/* ── MASTERLIST TOOLBAR + SEARCH ────────────────────── */
+.masterlist-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.masterlist-search {
+  height: 32px;
+  min-width: 220px;
+  padding: 0 12px;
+  font-size: 12px;
+  color: #1e293b !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  outline: none;
+}
+
+.masterlist-search:focus {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+.masterlist-search::placeholder {
+  color: #94a3b8;
+}
+
+.purok-empty {
+  text-align: center;
+  padding: 24px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ============================================================
+   DATA ANALYTICS — COVERAGE CARDS, GAPS CHART, DETAILS MODAL
+   ============================================================ */
+
+/* Missing text color utilities used by coverage analytics */
+.text-green {
+  color: #22c55e !important;
+}
+
+.text-red {
+  color: #ef4444 !important;
+}
+
+.text-orange {
+  color: #f97316 !important;
+}
+
+/* Progress bar fill colors (ensure bars always render) */
+.progress-bar.cyan { background: #06b6d4; }
+.progress-bar.blue { background: #3b82f6; }
+.progress-bar.green { background: #22c55e; }
+.progress-bar.yellow { background: #f59e0b; }
+.progress-bar.red { background: #ef4444; }
+.progress-bar.orange { background: #f97316; }
+
+/* Coverage card grid */
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.coverage-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.coverage-card:hover {
+  border-color: #06b6d4;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.18);
+  transform: translateY(-1px);
+}
+
+.coverage-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.coverage-code {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.4px;
+}
+
+.coverage-pct {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.coverage-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.coverage-stats strong {
+  color: #0f172a;
+}
+
+.coverage-empty {
+  color: #64748b;
+  font-size: 13px;
+  padding: 8px 2px;
+}
+
+/* Export CSV button inside a card header */
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-export:hover {
+  background: #e2e8f0;
+  border-color: #06b6d4;
+  color: #0369a1;
+}
+
+/* Coverage details modal */
+.modal-content.coverage-list-modal {
+  max-width: 640px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.coverage-list-modal .modal-header {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 20px;
+}
+
+.modal-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(6, 182, 212, 0.12);
+  color: #06b6d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.modal-title-box h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.modal-title-box p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.coverage-list-modal .modal-body {
+  padding: 18px 20px 20px;
+}
+
+.coverage-list-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 620px) {
+  .coverage-list-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.coverage-list-col {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.coverage-list-head {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.coverage-list-head.covered {
+  color: #15803d;
+}
+
+.coverage-list-head.missing {
+  color: #b91c1c;
+}
+
+.coverage-name-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.coverage-name-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 4px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.coverage-name-list li:last-child {
+  border-bottom: none;
+}
+
+.coverage-name-list li strong {
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coverage-name-list li strong i {
+  font-size: 8px;
+  color: #94a3b8;
+}
+
+.coverage-name-list li span {
+  font-size: 11px;
+  color: #64748b;
+  padding-left: 16px;
+}
+
+.coverage-list-empty {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 14px 8px !important;
+}
+
+/* Analytics coverage stat card accents */
+.coverage-stats .stat-card h2 {
+  font-size: 26px;
 }

@@ -336,6 +336,104 @@
         assignedPuroksEl.textContent = assignedKeys.map(k => purokData[k] ? purokData[k].name : k).join(' · ');
       }
     }
+
+    renderChildVaccineCoverage(childRecords);
+    renderMaternalCoverage(motherRecords);
+  }
+
+  // Live Vaccine Coverage Rate card (scoped to assigned records)
+  function dashboardCoverageBarClass(pct) {
+    if (pct >= 80) return 'green';
+    if (pct >= 50) return 'yellow';
+    return 'red';
+  }
+
+  function renderChildVaccineCoverage(childRecords) {
+    const listEl = document.getElementById('dashboardVaccineCoverage');
+    if (!listEl) return;
+    const total = childRecords.length;
+    if (total === 0) {
+      listEl.innerHTML = '<p style="color:#64748b; font-size:12px;">No child records for your assigned puroks.</p>';
+      return;
+    }
+    const codes = typeof VACCINES !== 'undefined' ? VACCINES : ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+    listEl.innerHTML = codes.map(code => {
+      const covered = childRecords.filter(r => Array.isArray(r.vaccines) && r.vaccines.includes(code)).length;
+      const pct = Math.round((covered / total) * 100);
+      const cls = dashboardCoverageBarClass(pct);
+      return `
+        <div class="coverage-item">
+          <div class="item-info">
+            <span>${code}</span>
+            <span class="text-${cls}">${pct}% (${covered}/${total})</span>
+          </div>
+          <div class="progress-bg"><div class="progress-bar ${cls}" style="width: ${pct}%;"></div></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Live Maternal Care Coverage card (TT ladder, iron, high-BP monitoring)
+  function parseMaternalBp(bp) {
+    const parts = String(bp || '').split('/');
+    return { sys: parseInt(parts[0], 10) || 0, dia: parseInt(parts[1], 10) || 0 };
+  }
+  function isHighMaternalBp(bp) {
+    const { sys, dia } = parseMaternalBp(bp);
+    return sys >= 130 || dia >= 80;
+  }
+
+  function renderMaternalCoverage(motherRecords) {
+    const listEl = document.getElementById('dashboardMaternalCoverage');
+    if (!listEl) return;
+    const total = motherRecords.length;
+    if (total === 0) {
+      listEl.innerHTML = '<p style="color:#64748b; font-size:12px;">No maternal records for your assigned puroks.</p>';
+      return;
+    }
+
+    const ttRows = [];
+    for (let dose = 1; dose <= 5; dose++) {
+      const reached = motherRecords.filter(r => (parseInt(String(r.ttDose).replace(/\D/g, ''), 10) || 0) >= dose).length;
+      const pct = Math.round((reached / total) * 100);
+      const cls = dashboardCoverageBarClass(pct);
+      ttRows.push(`
+        <div class="breakdown-item">
+          <div class="item-info">
+            <span>TT ${dose} Reached</span>
+            <span class="text-${cls}">${pct}% (${reached}/${total})</span>
+          </div>
+          <div class="progress-bg"><div class="progress-bar ${cls}" style="width: ${pct}%;"></div></div>
+        </div>
+      `);
+    }
+
+    const ironCount = motherRecords.filter(r => !!r.iron).length;
+    const ironPct = Math.round((ironCount / total) * 100);
+    const ironCls = dashboardCoverageBarClass(ironPct);
+    const ironRow = `
+      <div class="breakdown-item">
+        <div class="item-info">
+          <span>Iron Supp. Taken</span>
+          <span class="text-${ironCls}">${ironPct}% (${ironCount}/${total})</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar ${ironCls}" style="width: ${ironPct}%;"></div></div>
+      </div>
+    `;
+
+    const bpCount = motherRecords.filter(r => isHighMaternalBp(r.bp)).length;
+    const bpPct = Math.round((bpCount / total) * 100);
+    const bpRow = `
+      <div class="breakdown-item">
+        <div class="item-info">
+          <span>High BP (≥130/80)</span>
+          <span class="text-${bpCount > 0 ? 'red' : 'green'}">${bpPct}% (${bpCount}/${total})</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar ${bpCount > 0 ? 'red' : 'green'}" style="width: ${bpPct}%;"></div></div>
+      </div>
+    `;
+
+    listEl.innerHTML = ttRows.join('') + ironRow + bpRow;
   }
 
   // Populate modal tables

@@ -157,6 +157,11 @@
   color: #c084fc;
 }
 
+.icon-pink {
+  background-color: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+}
+
 .report-card-header h3 {
   font-size: 12px;
   font-weight: 700;
@@ -198,6 +203,14 @@
 
 .green-dot {
   background-color: var(--accent-green, #22c55e);
+}
+
+.yellow-dot {
+  background-color: var(--accent-yellow, #f59e0b);
+}
+
+.red-dot {
+  background-color: var(--accent-red, #ef4444);
 }
 
 .text-purple {
@@ -2295,6 +2308,23 @@ button.btn-purple-fill {
   background: #9333ea !important;
 }
 
+.btn-pink-fill,
+button.btn-pink-fill {
+  background: #ec4899 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-pink-fill:hover {
+  background: #db2777 !important;
+}
+
 /* Outline buttons */
 .report-actions .btn-outline,
 button.btn-outline {
@@ -2583,5 +2613,23 @@ button i,
 .sidebar .btn-logout i {
   color: inherit !important;
   font-size: 12px !important;
+}
+
+/* ── PRINT — only the PDF-selected report card is shown ── */
+@media print {
+  .report-card {
+    display: none !important;
+  }
+  .report-card.print-this {
+    display: block !important;
+  }
+  .reports-three-col {
+    display: block !important;
+  }
+  .report-stats-list li,
+  .report-stats-list p {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 
