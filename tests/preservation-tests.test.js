@@ -40,15 +40,24 @@ function setupDashboard() {
       
       // Mock session functions
       window.getSession = () => ({ 
-        userType: 'admin', 
-        userName: 'Test Admin', 
-        userId: 'admin01',
+        userType: 'bhw', 
+        userName: 'Test BHW', 
+        userId: 'bhw01',
+        firstName: 'Test',
+        lastName: 'BHW',
+        middleInitial: 'T',
         loginTime: Date.now(),
         expiresAt: Date.now() + 24 * 60 * 60 * 1000
       });
-      window.getCurrentUserName = () => 'Test Admin';
-      window.getCurrentUserId = () => 'admin01';
+      window.getCurrentUserName = () => 'Test T. BHW';
+      window.getCurrentUserId = () => 'bhw01';
       window.clearSession = () => {};
+      window.validateSession = (required) => {
+        const s = window.getSession();
+        if (!s) return false;
+        if (required && s.userType !== required) return false;
+        return true;
+      };
       
       // Mock alert and confirm
       window.alert = (msg) => console.log('ALERT:', msg);
@@ -105,6 +114,12 @@ function setupPage(pageName) {
       window.getCurrentUserName = () => 'Test T. BHW';
       window.getCurrentUserId = () => 'bhw01';
       window.clearSession = () => {};
+      window.validateSession = (required) => {
+        const s = window.getSession();
+        if (!s) return false;
+        if (required && s.userType !== required) return false;
+        return true;
+      };
       window.alert = (msg) => console.log('ALERT:', msg);
       window.confirm = () => false;
     }
@@ -304,11 +319,12 @@ function runTests() {
       expect(sidebar).not.toBeNull();
       
       // Check for expected navigation links
+      // NOTE: Purok Masterlists was intentionally moved to the Admin Dashboard,
+      // so it is no longer expected in the BHW dashboard sidebar.
       const expectedLinks = [
         'dashboard.html',
         'child.html',
         'maternal.html',
-        'purok.html',
         'reports.html'
       ];
       
@@ -325,7 +341,15 @@ function runTests() {
         expect(linkExists).toBeTruthy();
       });
       
+      // Verify Purok Masterlists is removed from the BHW dashboard
+      const purokLinkExists = Array.from(sidebar.querySelectorAll('.menu-list a')).some(link => 
+        link.getAttribute('href') === 'purok.html'
+      );
+      console.log(`  Link to purok.html (should NOT exist on BHW dashboard): ${purokLinkExists ? '✗ PRESENT' : '✓ REMOVED'}`);
+      expect(purokLinkExists).toBeFalsy();
+      
       console.log('✓ All expected navigation links present');
+      console.log('✓ Purok Masterlists correctly removed from BHW dashboard');
     } finally {
       dom.window.close();
     }
@@ -378,11 +402,57 @@ function runTests() {
     }
   });
   
+test('Preservation 2.4: Admin Dashboard hosts Purok Masterlists as an in-page section', () => {
+    const htmlPath = path.join(__dirname, '../html/admin.html');
+    const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
+    const dom = new JSDOM(htmlContent);
+    
+    try {
+      console.log('=== Verifying Admin Dashboard Purok Masterlists Integration ===');
+      
+      const document = dom.window.document;
+      
+      // Sidebar nav item is an in-page nav-link (no separate purok.html page)
+      const purokNavLink = document.querySelector('.menu-list a.nav-link[data-section="purok-masterlist"]');
+      expect(purokNavLink).not.toBeNull();
+      expect(purokNavLink.textContent).toContain('Purok Masterlists');
+      console.log('  Purok Masterlists nav-link uses data-section="purok-masterlist"');
+      
+      // Section exists and is wired as a content section
+      const purokSection = document.getElementById('purok-masterlist-section');
+      expect(purokSection).not.toBeNull();
+      expect(purokSection.getAttribute('class')).toContain('content-section');
+      console.log('  purok-masterlist-section exists');
+      
+      // Stats, tabs, and table elements present
+      expect(document.getElementById('stat-households')).not.toBeNull();
+      expect(document.getElementById('stat-population')).not.toBeNull();
+      expect(document.getElementById('stat-due')).not.toBeNull();
+      expect(document.getElementById('stat-bhws')).not.toBeNull();
+      expect(document.querySelector('.purok-tabs')).not.toBeNull();
+      expect(document.getElementById('table-title')).not.toBeNull();
+      expect(document.getElementById('entries-count')).not.toBeNull();
+      expect(document.getElementById('purok-table-body')).not.toBeNull();
+      expect(document.getElementById('btnPrintPurok')).not.toBeNull();
+      console.log('  Stats cards, purok tabs, and data table present');
+      
+      // No stale link pointing to the removed purok.html anywhere in admin.html
+      const stalePurokLinks = Array.from(document.querySelectorAll('a[href$="purok.html"]'));
+      expect(stalePurokLinks.length).toBe(0);
+      console.log('  No stale purok.html links in admin dashboard');
+      
+      console.log('✓ Purok Masterlists correctly hosted inside the Admin Dashboard');
+      console.log('✓ No separate Purok Masterlists page remains');
+    } finally {
+      dom.window.close();
+    }
+  });
+
   // ===== Property 3: Active Menu Highlighting =====
   console.log('\n' + '='.repeat(70));
   console.log('Property 3: Active Menu Highlighting Preservation (navigation.js)');
   console.log('='.repeat(70));
-  
+
   test('Preservation 3.1: navigation.js adds active class to current page menu item', () => {
     const { dom, document, window } = setupPage('dashboard.html');
     

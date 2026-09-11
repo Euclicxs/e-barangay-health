@@ -52,12 +52,6 @@
       <span class="menu-title">MANAGEMENT</span>
       <ul class="menu-list">
         <li>
-          <a href="purok.html">
-            <i class="fa-solid fa-clipboard-list"></i>
-            <span>Purok Masterlists</span>
-          </a>
-        </li>
-        <li>
           <a href="reports.html">
             <i class="fa-solid fa-chart-line"></i>
             <span>Reports & Exports</span>
@@ -72,6 +66,7 @@
         <div class="avatar" id="userAvatar"></div>
         <div class="user-info">
           <h4 id="userNameDisplay"></h4>
+          <p id="userAssignedPuroks" class="user-puroks"></p>
         </div>
       </div>
       <button class="btn-logout"><i class="fa-solid fa-arrow-left"></i> Logout</button>
@@ -97,27 +92,27 @@
       <!-- DASHBOARD STATS OVERVIEW -->
       <section class="dashboard-header">
         <h1>Dashboard Overview</h1>
-        <p>Summary of health records for Brgy. New Katipunan, Matanao</p>
+        <p id="dashboardSubtitle">Summary of health records for Brgy. New Katipunan, Matanao</p>
       </section>
 
       <section class="stats-grid">
         <div class="stat-card blue" style="cursor: pointer;" data-modal="total-records">
-          <h2>10</h2>
+          <h2 id="totalCountStat">10</h2>
           <h3>Total Child Records</h3>
           <p>Active in logbook</p>
         </div>
         <div class="stat-card red" style="cursor: pointer;" data-modal="overdue">
-          <h2>5</h2>
+          <h2 id="overdueCountStat">5</h2>
           <h3>Overdue Immunizations</h3>
-          <p>3 child ? 2 maternal</p>
+          <p id="overdueSubText">3 child ● 2 maternal</p>
         </div>
         <div class="stat-card yellow" style="cursor: pointer;" data-modal="due-this-month">
-          <h2>3</h2>
+          <h2 id="dueThisMonthCountStat">3</h2>
           <h3>Due This Month</h3>
           <p>Upcoming child visits</p>
         </div>
         <div class="stat-card green" style="cursor: pointer;" data-modal="completed">
-          <h2>4</h2>
+          <h2 id="completedCountStat">4</h2>
           <h3>Completed Visits</h3>
           <p>Child visits this month</p>
         </div>
@@ -130,29 +125,7 @@
             <h3><i class="fa-solid fa-syringe text-cyan"></i> Child Immunization Summary</h3>
             <a href="child.html" class="btn-action">View All &rarr;</a>
           </div>
-          <ul class="data-list">
-            <li>
-              <div>
-                <strong>Sofia Marie Reyes</strong>
-                <span>Purok Walingwaling ? 2 mos ? Female</span>
-              </div>
-              <span class="status-pill status-red">? Overdue</span>
-            </li>
-            <li>
-              <div>
-                <strong>Ethan James Fernandez</strong>
-                <span>Purok Sampaguita ? 8 mos ? Male</span>
-              </div>
-              <span class="status-pill status-green">? Completed</span>
-            </li>
-            <li>
-              <div>
-                <strong>Isabella Rose Villanueva</strong>
-                <span>Purok Santan ? 3 mos ? Female</span>
-              </div>
-              <span class="status-pill status-red">? Overdue</span>
-            </li>
-          </ul>
+          <ul class="data-list" id="childSummaryList"></ul>
         </div>
 
         <div class="content-card">
@@ -160,29 +133,7 @@
             <h3><i class="fa-solid fa-person-pregnant text-cyan"></i> Maternal / Prenatal Summary</h3>
             <a href="maternal.html" class="btn-action">View All &rarr;</a>
           </div>
-          <ul class="data-list">
-            <li>
-              <div>
-                <strong>Rosario Blanca Torres</strong>
-                <span>Purok Walingwaling ? BP: 120/80</span>
-              </div>
-              <span class="status-pill status-green">? Completed</span>
-            </li>
-            <li>
-              <div>
-                <strong>Cristina Mae Navarro</strong>
-                <span>Purok Sampaguita ? BP: 140/90</span>
-              </div>
-              <span class="status-pill status-red">? Overdue</span>
-            </li>
-            <li>
-              <div>
-                <strong>Analiza Joy Soriano</strong>
-                <span>Purok Santan ? BP: 115/75</span>
-              </div>
-              <span class="status-pill status-yellow">? Due This Month</span>
-            </li>
-          </ul>
+          <ul class="data-list" id="maternalSummaryList"></ul>
         </div>
       </section>
 
@@ -193,63 +144,7 @@
           <div class="card-header">
             <h3><i class="fa-solid fa-location-dot text-cyan"></i> Purok Breakdown ? Children</h3>
           </div>
-          <div class="breakdown-list">
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Calachuchi</span>
-                <span>2</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar cyan" style="width: 100%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Bougainvillea</span>
-                <span>2</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar blue" style="width: 100%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Walingwaling</span>
-                <span>2</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar cyan" style="width: 100%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Sampaguita</span>
-                <span>1</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar blue" style="width: 50%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Santan</span>
-                <span>1</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar cyan" style="width: 50%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Rose</span>
-                <span>1</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar blue" style="width: 50%;"></div></div>
-            </div>
-
-            <div class="breakdown-item">
-              <div class="item-info">
-                <span>Daisy</span>
-                <span>1</span>
-              </div>
-              <div class="progress-bg"><div class="progress-bar cyan" style="width: 50%;"></div></div>
-            </div>
-          </div>
+          <div class="breakdown-list" id="purokBreakdownList"></div>
         </div>
 
         <!-- VACCINE COVERAGE RATE -->
@@ -340,7 +235,7 @@
             <thead>
               <tr>
                 <th>CHILD NAME</th>
-                <th>AGE / SEX</th>
+                <th>AGE</th>
                 <th>PUROK</th>
                 <th>STATUS</th>
               </tr>
@@ -374,7 +269,6 @@
               <tr>
                 <th>PATIENT NAME</th>
                 <th>TYPE</th>
-                <th>AGE / SEX</th>
                 <th>PUROK</th>
                 <th>OVERDUE BY</th>
               </tr>
@@ -407,7 +301,7 @@
             <thead>
               <tr>
                 <th>CHILD NAME</th>
-                <th>AGE / SEX</th>
+                <th>AGE</th>
                 <th>PUROK</th>
                 <th>DUE DATE</th>
               </tr>
@@ -440,7 +334,7 @@
             <thead>
               <tr>
                 <th>CHILD NAME</th>
-                <th>AGE / SEX</th>
+                <th>AGE</th>
                 <th>PUROK</th>
                 <th>VISIT DATE</th>
               </tr>
@@ -456,6 +350,8 @@
   </div>
 <script src="../js/navigation.js"></script>
   <script src="../js/session.js"></script>
+  <script src="../js/credentials.js"></script>
+  <script src="../js/purok-data.js"></script>
   <script src="../js/dashboard.js"></script>
 </body>
 </html>

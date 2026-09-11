@@ -1,12 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Validate session - allow both admin and BHW users
-  const session = getSession();
-  if (!session) {
-    window.location.href = 'login.html';
-    return;
-  }
-  if (session.userType !== 'admin' && session.userType !== 'bhw') {
-    window.location.href = 'login.html';
+  // Validate session - page is BHW-only now
+  if (!validateSession('bhw')) {
     return;
   }
 
@@ -60,27 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     updateUserProfile();
   }, 100);
-  // Add admin navigation section if user is admin
-  if (session && session.userType === 'admin') {
-    const sidebarFooter = document.querySelector('.sidebar-footer');
-    if (sidebarFooter) {
-      const adminSection = document.createElement('div');
-      adminSection.className = 'menu-section';
-      adminSection.style.marginTop = 'auto';
-      adminSection.innerHTML = `
-        <span class="menu-title">ADMIN PANEL</span>
-        <ul class="menu-list">
-          <li>
-            <a href="admin.html">
-              <i class="fa-solid fa-user-shield"></i>
-              <span>Return to Admin</span>
-            </a>
-          </li>
-        </ul>
-      `;
-      sidebarFooter.parentNode.insertBefore(adminSection, sidebarFooter);
-    }
-  }
 
   // 2. ENCODE NEW IMMUNIZATION VISIT MODAL LOGIC
   const encodeModal = document.getElementById('encodeModal');
@@ -245,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = cells[4]?.textContent || '';
       const temp = cells[5]?.textContent || '';
       const rr = cells[6]?.textContent || '';
-      const muac = cells[13]?.textContent || '';
+      const muac = cells[14]?.textContent || '';
       
       // Populate update modal with current data
       const modal = document.getElementById('updateModal');
@@ -299,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (heightInput) cells[4].textContent = heightInput.value;
       if (tempInput) cells[5].textContent = tempInput.value;
       if (rrInput) cells[6].innerHTML = `<span class="text-cyan font-bold">${rrInput.value}</span>`;
-      if (muacInput) cells[13].innerHTML = `<strong>${muacInput.value}</strong>`;
+      if (muacInput) cells[14].innerHTML = `<strong>${muacInput.value}</strong>`;
       
       // Get vaccine checkboxes
       const checkboxes = modal.querySelectorAll('.vaccine-list input[type="checkbox"]');
@@ -345,10 +318,202 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ========== PUROK SCOPING (only assigned puroks) ==========
+  function getAssignedPurokKeys() {
+    if (typeof getCurrentUserAssignedPuroks === 'function') {
+      const keys = getCurrentUserAssignedPuroks();
+      if (keys) return keys;
+    }
+    return null; // no assignment info => show all
+  }
+
+  function assignedPurokKeysToNames(keys) {
+    return keys.map(key => {
+      if (typeof purokData !== 'undefined' && purokData[key]) {
+        return purokData[key].name.toLowerCase();
+      }
+      return String(key).toLowerCase();
+    });
+  }
+
+  function belongsToAssignedPurok(purokCell, assignedNames) {
+    if (assignedNames === null) return true;
+    return assignedNames.some(name => purokCell.includes(name));
+  }
+
+  function refillPurokSelect(select, selectedPurok, options) {
+    const optionsConfig = options || {};
+    const assignedKeys = getAssignedPurokKeys();
+    if (!assignedKeys || typeof purokData === 'undefined') return;
+
+    select.innerHTML = '';
+    if (optionsConfig.placeholder) {
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = optionsConfig.placeholder;
+      select.appendChild(ph);
+    }
+    if (optionsConfig.includeAll && assignedKeys.length > 1) {
+      const allOption = document.createElement('option');
+      allOption.value = 'all';
+      allOption.textContent = 'All Puroks';
+      select.appendChild(allOption);
+    }
+    assignedKeys.forEach(key => {
+      const purok = purokData[key];
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = `Purok ${purok ? purok.name : key}`;
+      select.appendChild(option);
+    });
+    if (selectedPurok && assignedKeys.includes(selectedPurok)) {
+      select.value = selectedPurok;
+    }
+  }
+
+  function applyPurokScoping() {
+    const assignedKeys = getAssignedPurokKeys();
+    if (!assignedKeys) return;
+
+    // Restrict the filter dropdown to assigned puroks
+    const filterSelect = document.querySelector('.select-purok');
+    if (filterSelect) {
+      refillPurokSelect(filterSelect, filterSelect.value, { includeAll: true });
+    }
+
+    // Restrict the encode modal purok dropdown to assigned puroks
+    const encodeSelect = document.getElementById('encodePurokSelect');
+    if (encodeSelect) {
+      refillPurokSelect(encodeSelect, encodeSelect.value, { placeholder: '— Select Purok —' });
+    }
+  }
+
+  // ========== TABLE RENDERING (from shared purok data) ==========
+  function getScopeKeys() {
+    const assigned = getAssignedPurokKeys();
+    if (assigned && assigned.length) return assigned;
+    return typeof purokData !== 'undefined' ? Object.keys(purokData) : [];
+  }
+
+  function scopedChildren() {
+    if (typeof purokData === 'undefined') return [];
+    const records = [];
+    getScopeKeys().forEach(key => {
+      const purok = purokData[key];
+      if (!purok || !purok.records) return;
+      purok.records.forEach(rec => {
+        if (rec.type === 'Child') {
+          const status = computeStatus(rec.nextVisitDate, rec.lastVisitDate);
+          records.push({ rec, purok: purok.name, status });
+        }
+      });
+    });
+    return records;
+  }
+
+  function computeAgeLabel(birthDate) {
+    const now = new Date();
+    const birth = new Date(birthDate);
+    let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+    if (now.getDate() < birth.getDate()) months -= 1;
+    if (months < 12) {
+      return `${months} mo${months === 1 ? '' : 's'}`;
+    }
+    const years = Math.floor(months / 12);
+    const rem = months % 12;
+    const yearLabel = `${years} yr${years === 1 ? '' : 's'}`;
+    return rem > 0 ? `${yearLabel} ${rem} mo` : yearLabel;
+  }
+
+  const childStatusClass = { 'Completed': 'status-green', 'Due This Month': 'status-yellow', 'Overdue': 'status-red' };
+  const childVaxColumnMap = { 'BCG': 7, 'OPV': 8, 'IPV': 9, 'PENTA': 10, 'PCV': 11, 'MCV1': 12, 'MCV2': 13 };
+
+  function renderChildTable() {
+    const tbody = document.getElementById('childTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    scopedChildren().forEach(item => {
+      const { rec, purok, status } = item;
+      const tr = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      const nameStrong = document.createElement('strong');
+      nameStrong.textContent = rec.name;
+      nameCell.appendChild(nameStrong);
+      nameCell.appendChild(document.createElement('br'));
+      const nameCode = document.createElement('span');
+      nameCode.className = 'text-muted';
+      nameCode.textContent = rec.code;
+      nameCell.appendChild(nameCode);
+
+      const ageCell = document.createElement('td');
+      ageCell.innerHTML = `${computeAgeLabel(rec.birthDate)}<br><span class="${rec.sex === 'Female' ? 'text-female' : 'text-male'}">${rec.sex}</span>`;
+
+      const purokCell = document.createElement('td');
+      purokCell.textContent = purok;
+
+      const weightCell = document.createElement('td');
+      weightCell.textContent = String(rec.weight);
+      const heightCell = document.createElement('td');
+      heightCell.textContent = String(rec.height);
+      const tempCell = document.createElement('td');
+      tempCell.textContent = String(rec.temp);
+      const rrCell = document.createElement('td');
+      rrCell.innerHTML = `<span class="text-cyan font-bold">${String(rec.rr)}</span>`;
+
+      const vaxCodes = typeof VACCINES !== 'undefined' ? VACCINES : Object.keys(childVaxColumnMap);
+      const vaxCells = vaxCodes.map(vCode => {
+        const cell = document.createElement('td');
+        const has = Array.isArray(rec.vaccines) && rec.vaccines.includes(vCode);
+        cell.innerHTML = has ? '<span class="icon-check">&#10003;</span>' : '<span class="icon-cross">&#10007;</span>';
+        return cell;
+      });
+
+      const muacCell = document.createElement('td');
+      muacCell.innerHTML = `<strong>${String(rec.muac)}</strong>`;
+
+      const statusCell = document.createElement('td');
+      statusCell.innerHTML = `<span class="status-pill ${childStatusClass[status] || 'status-yellow'}">&bull; ${status}</span>`;
+
+      const actionCell = document.createElement('td');
+      actionCell.innerHTML = '<button class="btn-sm btn-outline update-btn">Update</button> <button class="btn-sm btn-subtle view-btn">View</button>';
+
+      tr.appendChild(nameCell);
+      tr.appendChild(ageCell);
+      tr.appendChild(purokCell);
+      tr.appendChild(weightCell);
+      tr.appendChild(heightCell);
+      tr.appendChild(tempCell);
+      tr.appendChild(rrCell);
+      vaxCells.forEach(c => tr.appendChild(c));
+      tr.appendChild(muacCell);
+      tr.appendChild(statusCell);
+      tr.appendChild(actionCell);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Rendered rows are not present at initial binding time, so handle View clicks by delegation.
+  document.addEventListener('click', function(e) {
+    const btn = e.target.classList && (e.target.classList.contains('view-btn')
+      ? e.target
+      : e.target.closest ? e.target.closest('.view-btn') : null);
+    if (btn && viewModal) {
+      viewModal.style.display = 'flex';
+      initGrowthChart();
+    }
+  });
+
+  renderChildTable();
+  applyPurokScoping();
+
   // Combined filter function
   function filterTable() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const selectedPurok = purokSelect ? purokSelect.value.toLowerCase() : 'all';
+    const assignedNames = getAssignedPurokKeys() ? assignedPurokKeysToNames(getAssignedPurokKeys()) : null;
     const rows = document.querySelectorAll('.data-table tbody tr');
     
     let visibleCount = 0;
@@ -362,9 +527,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Check purok match
       const matchesPurok = selectedPurok === 'all' || purokCell.includes(selectedPurok);
+
+      // Check assignment match (only assigned puroks are visible)
+      const matchesAssignment = belongsToAssignedPurok(purokCell, assignedNames);
       
-      // Show row only if both conditions match
-      if (matchesSearch && matchesPurok) {
+      // Show row only if all conditions match
+      if (matchesSearch && matchesPurok && matchesAssignment) {
         row.style.display = '';
         visibleCount++;
       } else {
@@ -374,6 +542,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log(`Filtered: ${visibleCount} records visible`);
   }
+  // Hide rows from puroks outside the BHW's assignment on load
+  filterTable();
   // Start clock
   setInterval(updateClock, 1000);
   updateClock();

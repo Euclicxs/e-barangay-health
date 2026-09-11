@@ -5,13 +5,12 @@
  * 
  * Purpose: Surface counterexamples demonstrating sidebar structure inconsistencies
  * 
- * Bug Condition 2: child.html, maternal.html, and purok.html use `.brand` class
+ * Bug Condition 2: child.html and maternal.html use `.brand` class
  * instead of the standard `.sidebar-header` class used in dashboard.html
  * 
  * Expected Outcome: Tests FAIL on unfixed code
  * - child.html has `.brand` instead of `.sidebar-header` → FAIL
- * - maternal.html has `.brand` instead of `.sidebar-header` → FAIL  
- * - purok.html has `.brand` instead of `.sidebar-header` → FAIL
+ * - maternal.html has `.brand` instead of `.sidebar-header` → FAIL
  * 
  * After fix: Tests PASS confirming consistent structure
  */
@@ -109,51 +108,18 @@ function testMaternalSidebarStructure() {
 }
 
 /**
- * Test: purok.html sidebar uses .sidebar-header class (not .brand)
- * 
- * **Bug Condition**: On unfixed code, purok.html uses `.brand` class
- * **Expected**: Test FAILS on unfixed code, PASSES after fix
- */
-function testPurokSidebarStructure() {
-  console.log(`\n${BOLD}Test 3: purok.html sidebar structure${RESET}`);
-  
-  const doc = loadHTML('purok.html');
-  const sidebar = doc.querySelector('.sidebar');
-  
-  if (!sidebar) {
-    console.log(`${RED}✗ FAIL${RESET}: No .sidebar element found`);
-    return false;
-  }
-  
-  const sidebarHeader = sidebar.querySelector('.sidebar-header');
-  const brandDiv = sidebar.querySelector('.brand');
-  
-  if (sidebarHeader) {
-    console.log(`${GREEN}✓ PASS${RESET}: purok.html uses .sidebar-header class`);
-    return true;
-  } else {
-    console.log(`${RED}✗ FAIL${RESET}: purok.html does NOT have .sidebar-header class`);
-    if (brandDiv) {
-      console.log(`${YELLOW}  → Counterexample: Uses .brand class instead${RESET}`);
-      console.log(`${YELLOW}  → Location: html/purok.html, line ~14${RESET}`);
-    }
-    return false;
-  }
-}
-
-/**
- * Test: All pages have matching sidebar structure elements
+ * Test: Consistent sidebar logo class across all pages
  * 
  * Verifies that the sidebar logo container uses consistent class naming
  * 
- * **Bug Condition**: On unfixed code, child/maternal/purok use `.brand-logo` 
+ * **Bug Condition**: On unfixed code, child/maternal use `.brand-logo` 
  * while dashboard uses `.sidebar-logo`
  * **Expected**: Test FAILS on unfixed code showing inconsistency
  */
 function testConsistentSidebarLogoClass() {
-  console.log(`\n${BOLD}Test 4: Consistent sidebar logo class across all pages${RESET}`);
+  console.log(`\n${BOLD}Test 3: Consistent sidebar logo class across all pages${RESET}`);
   
-  const pages = ['child.html', 'maternal.html', 'purok.html'];
+  const pages = ['child.html', 'maternal.html'];
   const results = [];
   
   for (const page of pages) {
@@ -200,9 +166,9 @@ function testConsistentSidebarLogoClass() {
  * (This class may be acceptable even if parent changes to .sidebar-header)
  */
 function testSidebarTextStructure() {
-  console.log(`\n${BOLD}Test 5: Sidebar text container structure${RESET}`);
+  console.log(`\n${BOLD}Test 4: Sidebar text container structure${RESET}`);
   
-  const pages = ['child.html', 'maternal.html', 'purok.html'];
+  const pages = ['child.html', 'maternal.html'];
   const results = [];
   
   for (const page of pages) {
@@ -237,7 +203,6 @@ console.log(`${YELLOW}⚠ Failures confirm the bugs exist and provide counterexa
 const results = [
   testChildSidebarStructure(),
   testMaternalSidebarStructure(),
-  testPurokSidebarStructure(),
   testConsistentSidebarLogoClass(),
   testSidebarTextStructure()
 ];
@@ -256,7 +221,6 @@ if (failCount > 0) {
   console.log(`\n${YELLOW}${BOLD}Counterexamples Documented:${RESET}`);
   console.log(`${YELLOW}• child.html uses .brand instead of .sidebar-header${RESET}`);
   console.log(`${YELLOW}• maternal.html uses .brand instead of .sidebar-header${RESET}`);
-  console.log(`${YELLOW}• purok.html uses .brand instead of .sidebar-header${RESET}`);
   console.log(`${YELLOW}• Logo containers use .brand-logo instead of .sidebar-logo${RESET}`);
   console.log(`\n${YELLOW}✓ Bug confirmed: Sidebar structure is inconsistent across pages${RESET}`);
 }

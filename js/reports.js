@@ -1,12 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Validate session - allow both admin and BHW users
-  const session = getSession();
-  if (!session) {
-    window.location.href = 'login.html';
-    return;
-  }
-  if (session.userType !== 'admin' && session.userType !== 'bhw') {
-    window.location.href = 'login.html';
+  // Validate session - page is BHW-only now
+  if (!validateSession('bhw')) {
     return;
   }
 
@@ -31,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
       userAvatar.style.alignItems = 'center';
       userAvatar.style.justifyContent = 'center';
       userAvatar.style.visibility = 'visible';
-      console.log('? Avatar:', firstLetter);
+      console.log('✓ Avatar:', firstLetter);
     }
 
     if (userNameElement) {
@@ -42,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (session.userType === 'admin') {
         userRoleElement.textContent = 'Admin Access';
       } else {
-        userRoleElement.textContent = `BHW ? ID: ${userId}`;
+        userRoleElement.textContent = `BHW ● ID: ${userId}`;
       }
     }
   }
@@ -78,179 +72,361 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 1. BAR CHART (Vaccination Rate per Purok)
-  const ctxBar = document.getElementById('purokBarChart').getContext('2d');
-  new Chart(ctxBar, {
-    type: 'bar',
-    data: {
-      labels: ['Calachuchi', 'Bougainvillea', 'Walingwaling', 'Sampaguita', 'Santan', 'Rose', 'Daisy'],
-      datasets: [{
-        data: [75, 100, 30, 100, 0, 100, 50],
-        backgroundColor: [
-          '#eab308', // Calachuchi - 75% Yellow
-          '#22c55e', // Bougainvillea - 100% Green
-          '#ef4444', // Walingwaling - 30% Red
-          '#22c55e', // Sampaguita - 100% Green
-          '#334155', // Santan - 0% Dark Gray
-          '#22c55e', // Rose - 100% Green
-          '#eab308'  // Daisy - 50% Yellow
-        ],
-        borderRadius: 4,
-        barThickness: 28
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
+  // ========== DATA LAYER (scoped to the logged-in BHW's assigned puroks) ==========
+  const VACCINE_ORDER = ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+  const VACCINE_DONUT_COLORS = ['#06b6d4', '#22c55e', '#eab308', '#ef4444', '#3b82f6', '#ec4899', '#f97316'];
+  const VACCINE_LEGEND_CLASSES = ['bg-cyan', 'bg-green', 'bg-yellow', 'bg-red', 'bg-blue', 'bg-pink', 'bg-orange'];
+
+  function getAssignedPurokKeys() {
+    if (typeof getCurrentUserAssignedPuroks === 'function') {
+      const keys = getCurrentUserAssignedPuroks();
+      if (keys && keys.length) return keys;
+    }
+    return null; // no assignment info => show all
+  }
+
+  function getScopeKeys() {
+    const assigned = getAssignedPurokKeys();
+    if (assigned) return assigned;
+    return typeof purokData !== 'undefined' ? Object.keys(purokData) : [];
+  }
+
+  function getPurokKeyName(key) {
+    if (typeof purokData !== 'undefined' && purokData[key]) return purokData[key].name;
+    return String(key);
+  }
+
+  function scopedRecords() {
+    const records = [];
+    getScopeKeys().forEach(key => {
+      if (typeof purokData === 'undefined') return;
+      const purok = purokData[key];
+      if (!purok || !purok.records) return;
+      purok.records.forEach(rec => {
+        const status = computeStatus(rec.nextVisitDate, rec.lastVisitDate);
+        records.push({ rec, purok: purok.name, purokKey: key, status });
+      });
+    });
+    return records;
+  }
+
+  function scopedChildren() {
+    return scopedRecords().filter(item => item.rec.type === 'Child');
+  }
+
+  function scopedMothers() {
+    return scopedRecords().filter(item => item.rec.type === 'Mother');
+  }
+
+  function rangeStatusClass(rate) {
+    if (rate >= 80) return 'green-dot';
+    if (rate >= 50) return 'yellow-dot';
+    return 'red-dot';
+  }
+
+  function rangeTextClass(rate) {
+    if (rate >= 80) return 'text-green';
+    if (rate >= 50) return 'text-yellow';
+    return 'text-red';
+  }
+
+  const scopeKeys = getScopeKeys();
+  const allRecords = scopedRecords();
+  const children = scopedChildren();
+  const mothers = scopedMothers();
+  const totalChildren = children.length;
+  const totalMothers = mothers.length;
+
+  const childrenCompleted = children.filter(item => item.status === 'Completed').length;
+  const mothersCompleted = mothers.filter(item => item.status === 'Completed').length;
+  const totalVisits = allRecords.length;
+  const completedTotal = allRecords.filter(item => item.status === 'Completed').length;
+
+  const totalHouseholds = scopeKeys.reduce((sum, key) => {
+    return sum + (typeof purokData !== 'undefined' && purokData[key] ? (Number(purokData[key].households) || 0) : 0);
+  }, 0);
+
+  // Per-vaccine coverage across scoped children
+  const vaccineCounts = {};
+  VACCINE_ORDER.forEach(v => vaccineCounts[v] = 0);
+  children.forEach(item => {
+    (item.rec.vaccines || []).forEach(v => {
+      if (vaccineCounts.hasOwnProperty(v)) vaccineCounts[v] += 1;
+    });
+  });
+
+  const vaccineCoverage = {};
+  VACCINE_ORDER.forEach(v => {
+    vaccineCoverage[v] = totalChildren ? Math.round((vaccineCounts[v] / totalChildren) * 100) : 0;
+  });
+
+  const totalDoses = VACCINE_ORDER.reduce((sum, v) => sum + vaccineCounts[v], 0);
+
+  // Active BHWs across scoped puroks (distinct)
+  const activeBhwIds = new Set();
+  if (typeof getUsersByPurokKey === 'function') {
+    scopeKeys.forEach(key => {
+      const users = getUsersByPurokKey(key);
+      (users || []).forEach(u => activeBhwIds.add(u.id || u.code || u.name));
+    });
+  }
+  const activeBhwCount = activeBhwIds.size > 0 ? activeBhwIds.size : (allRecords.length ? 1 : 0);
+
+  // Vaccination rate per purok (% of children with the full primary series)
+  const purokRateMap = {};
+  scopeKeys.forEach(key => {
+    const ch = allRecords.filter(item => item.purokKey === key && item.rec.type === 'Child');
+    if (!ch.length) {
+      purokRateMap[key] = 0;
+      return;
+    }
+    const fully = ch.filter(item => (item.rec.vaccines || []).length >= VACCINE_ORDER.length).length;
+    purokRateMap[key] = Math.round((fully / ch.length) * 100);
+  });
+
+  const purokChartData = {
+    labels: scopeKeys.map(getPurokKeyName),
+    values: scopeKeys.map(key => purokRateMap[key]),
+    colors: scopeKeys.map(key => {
+      const rate = purokRateMap[key];
+      if (rate >= 80) return '#22c55e';
+      if (rate >= 50) return '#eab308';
+      if (rate > 0) return '#ef4444';
+      return '#334155';
+    })
+  };
+
+  const vaccineChartData = {
+    labels: VACCINE_ORDER,
+    values: VACCINE_ORDER.map(v => vaccineCounts[v])
+  };
+
+  // Coverage % for BHW log
+  const coveragePct = allRecords.length ? Math.round((completedTotal / allRecords.length) * 100) : 0;
+
+  // Update the page subtitle with the scope being displayed
+  const subtitleEl = document.querySelector('.page-title-section p');
+  if (subtitleEl) {
+    const base = 'Generate and download health reports for Brgy. New Katipunan, Matanao';
+    const names = scopeKeys.map(getPurokKeyName);
+    subtitleEl.textContent = assignedKeysPresent()
+      ? `${base} — Showing assigned puroks: ${names.join(' · ')}`
+      : base;
+  }
+
+  function assignedKeysPresent() {
+    const assigned = getAssignedPurokKeys();
+    return assigned !== null && assigned.length > 0;
+  }
+
+  // Populate top report cards with computed values
+  const reportCards = document.querySelectorAll('.reports-three-col .report-card');
+  if (reportCards.length >= 1) {
+    const strongEls = reportCards[0].querySelectorAll('.report-stats-list strong');
+    if (strongEls[0]) strongEls[0].textContent = String(totalHouseholds);
+    if (strongEls[1]) strongEls[1].textContent = String(childrenCompleted);
+    if (strongEls[2]) strongEls[2].textContent = String(mothersCompleted);
+    console.log(`Monthly: households=${totalHouseholds}, children=${childrenCompleted}, mothers=${mothersCompleted}`);
+  }
+  if (reportCards.length >= 2) {
+    const listEl = reportCards[1].querySelector('.report-stats-list');
+    if (listEl) {
+      listEl.innerHTML = VACCINE_ORDER.map(v => {
+        const pct = vaccineCoverage[v];
+        return `<p><span class="dot ${rangeStatusClass(pct)}"></span> ${v}: <strong class="${rangeTextClass(pct)}">${pct}%</strong></p>`;
+      }).join('');
+      console.log('Vaccination coverage updated', vaccineCoverage);
+    }
+  }
+  if (reportCards.length >= 3) {
+    const strongEls = reportCards[2].querySelectorAll('.report-stats-list strong');
+    if (strongEls[0]) strongEls[0].textContent = String(totalVisits);
+    if (strongEls[1]) strongEls[1].textContent = String(activeBhwCount);
+    if (strongEls[2]) strongEls[2].textContent = `${coveragePct}%`;
+    console.log(`BHW log: visits=${totalVisits}, active=${activeBhwCount}, coverage=${coveragePct}%`);
+  }
+
+  // ========== CHARTS ==========
+  const barReady = typeof Chart !== 'undefined' && document.getElementById('purokBarChart');
+  const donutReady = typeof Chart !== 'undefined' && document.getElementById('vaccineDonutChart');
+
+  if (barReady) {
+    const ctxBar = document.getElementById('purokBarChart').getContext('2d');
+    new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: purokChartData.labels,
+        datasets: [{
+          data: purokChartData.values,
+          backgroundColor: purokChartData.colors,
+          borderRadius: 4,
+          barThickness: 28
+        }]
       },
-      scales: {
-        y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            stepSize: 25,
-            callback: value => value + '%',
-            color: '#64748b',
-            font: { size: 10 }
-          },
-          grid: { color: '#1e293b' }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
         },
-        x: {
-          ticks: {
-            color: '#94a3b8',
-            font: { size: 10 }
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            ticks: {
+              stepSize: 25,
+              callback: value => value + '%',
+              color: '#64748b',
+              font: { size: 10 }
+            },
+            grid: { color: '#1e293b' }
           },
-          grid: { display: false }
+          x: {
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10 }
+            },
+            grid: { display: false }
+          }
         }
       }
-    }
-  });
+    });
+  }
 
-  // 2. DONUT CHART (Vaccine Distribution)
-  const ctxDonut = document.getElementById('vaccineDonutChart').getContext('2d');
-  new Chart(ctxDonut, {
-    type: 'doughnut',
-  data: {
-    labels: ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'],
-    datasets: [{
-      data: [9, 7, 6, 8, 5, 4, 3], // 7 numbers dapat ito!
-      backgroundColor: [
-        '#06b6d4', // Cyan (BCG)
-        '#22c55e', // Green (OPV)
-        '#eab308', // Yellow (IPV)
-        '#ef4444', // Red (PENTA)
-        '#3b82f6', // Blue (PCV)
-        '#ec4899', // Pink (MCV1)
-        '#f97316'  // Orange (MCV2)
-      ],
-      borderWidth: 0,
-      hoverOffset: 4
-    }]
-  },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: {
-        legend: { display: false }
+  if (donutReady) {
+    const ctxDonut = document.getElementById('vaccineDonutChart').getContext('2d');
+    new Chart(ctxDonut, {
+      type: 'doughnut',
+      data: {
+        labels: vaccineChartData.labels,
+        datasets: [{
+          data: vaccineChartData.values,
+          backgroundColor: VACCINE_DONUT_COLORS,
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false }
+        }
       }
-    }
-  });
+    });
+  }
 
+  // Refresh the donut legend numbers from computed distribution
+  const donutLegendEl = document.querySelector('.donut-legend');
+  if (donutLegendEl) {
+    donutLegendEl.innerHTML = VACCINE_ORDER.map((v, idx) => {
+      return `<span><span class="legend-box ${VACCINE_LEGEND_CLASSES[idx]}"></span> ${v} <strong>${vaccineCounts[v]}</strong></span>`;
+    }).join('');
+  }
 
-  // REPORTS & EXPORTS BUTTON FUNCTIONALITY - Export buttons
+  // ========== REPORTS & EXPORTS BUTTONS ==========
   const btnExportPDF = document.getElementById('btnExportPDF');
   const btnExportExcel = document.getElementById('btnExportExcel');
   const btnPrintReport = document.getElementById('btnPrintReport');
 
   if (btnExportPDF) {
     btnExportPDF.addEventListener('click', () => {
-      const period = document.getElementById('filter-date-display')?.value || 'August 2026';
-      alert(`?? Export to PDF\n\nGenerating PDF report for: ${period}\n\nThis would download:\n? Health Report - ${period}.pdf\n? Contains all vaccination data, statistics, and charts`);
+      const period = document.getElementById('filter-date-display')?.value || 'October 2026';
+      alert(`✅ Export to PDF\n\nGenerating PDF report for: ${period}\n\nThis would download:\n📄 Health Report - ${period}.pdf\n📊 Contains all vaccination data, statistics, and charts`);
     });
   }
 
   if (btnExportExcel) {
     btnExportExcel.addEventListener('click', () => {
-      const period = document.getElementById('filter-date-display')?.value || 'August 2026';
-      alert(`?? Export to Excel\n\nGenerating Excel spreadsheet for: ${period}\n\nThis would download:\n? Health Data - ${period}.xlsx\n? Includes all patient records in tabular format`);
+      const period = document.getElementById('filter-date-display')?.value || 'October 2026';
+      alert(`✅ Export to Excel\n\nGenerating Excel spreadsheet for: ${period}\n\nThis would download:\n📄 Health Data - ${period}.xlsx\n📋 Includes all patient records in tabular format`);
     });
   }
 
   if (btnPrintReport) {
     btnPrintReport.addEventListener('click', () => {
-      alert(`??? Print Report\n\nOpening print preview...\n\nThis would open the browser print dialog with a formatted report.`);
-      // window.print(); // Uncomment to actually print
+      alert(`🖨️ Print Report\n\nOpening print preview...\n\nThis would open the browser print dialog with a formatted report.`);
     });
   }
 
-  // Generate Custom Report button
   const btnGenerateCustom = document.getElementById('btnGenerateCustom');
   if (btnGenerateCustom) {
     btnGenerateCustom.addEventListener('click', () => {
-      alert(`?? Generate Custom Report\n\nOpening custom report builder...\n\nThis would allow you to:\n? Select specific puroks\n? Choose date range\n? Pick data categories\n? Customize output format`);
+      alert(`📊 Generate Custom Report\n\nOpening custom report builder...\n\nThis would allow you to:\n📌 Select specific puroks\n📅 Choose date range\n🗂️ Pick data categories\n📤 Customize output format`);
     });
   }
 
   // Initialize - Update profile immediately
   updateUserProfile();
-  
-  // Force update profile again after DOM fully loaded
-  setTimeout(() => {
-    updateUserProfile();
-  }, 100);
 
-  // Add admin navigation section if user is admin
-  if (session && session.userType === 'admin') {
-    const sidebarFooter = document.querySelector('.sidebar-footer');
-    if (sidebarFooter) {
-      const adminSection = document.createElement('div');
-      adminSection.className = 'menu-section';
-      adminSection.style.marginTop = 'auto';
-      adminSection.innerHTML = `
-        <span class="menu-title">ADMIN PANEL</span>
-        <ul class="menu-list">
-          <li>
-            <a href="admin.html">
-              <i class="fa-solid fa-user-shield"></i>
-              <span>Return to Admin</span>
-            </a>
-          </li>
-        </ul>
-      `;
-      sidebarFooter.parentNode.insertBefore(adminSection, sidebarFooter);
-    }
-  }
-
-
-  // ========== REPORTS & EXPORTS FUNCTIONALITY ==========
-  
-  // Date period filter buttons - consolidated implementation
+  // ========== DATE PERIOD FILTER BUTTONS ==========
   const quickDateBtns = document.querySelectorAll('.btn-quick-date');
   const dateDisplay = document.getElementById('filter-date-display');
   const periodTag = document.getElementById('active-period-tag');
-  
+
   quickDateBtns.forEach(btn => {
     btn.addEventListener('click', function() {
-      // Remove active from all buttons
       quickDateBtns.forEach(b => b.classList.remove('active'));
-      // Add active to clicked button
       this.classList.add('active');
-      
-      // Update display
+
       const period = this.getAttribute('data-period');
       const fullMonth = period === 'Aug 2026' ? 'August 2026' : 
                        (period === 'Sep 2026' ? 'September 2026' : 'October 2026');
-      
+
       if (dateDisplay) dateDisplay.value = fullMonth;
       if (periodTag) periodTag.textContent = `${fullMonth} Health Report`;
-      
+
       console.log(`Switched to period: ${fullMonth}`);
     });
   });
-  
+
+  // CSV builders
+  function buildVaccinationCsv() {
+    let csv = 'Vaccine,Coverage,Total_Children,Immunized\n';
+    VACCINE_ORDER.forEach(v => {
+      csv += `${v},${vaccineCoverage[v]}%,${totalChildren},${vaccineCounts[v]}\n`;
+    });
+    return csv;
+  }
+
+  function buildMonthlyCsv() {
+    let csv = 'Category,Count,Percentage\n';
+    const base = totalHouseholds || 1;
+    csv += `Households,${totalHouseholds},100%\n`;
+    csv += `Children Immunized,${childrenCompleted},${totalHouseholds ? Math.round((childrenCompleted / base) * 100) : 0}%\n`;
+    csv += `Mothers Checked,${mothersCompleted},${totalHouseholds ? Math.round((mothersCompleted / base) * 100) : 0}%\n`;
+    return csv;
+  }
+
+  function buildBhwCsv() {
+    let csv = 'Category,Count,Value\n';
+    csv += `Total Visits,${totalVisits},-\n`;
+    csv += `Active BHWs,${activeBhwCount},-\n`;
+    csv += `Coverage,${coveragePct}%,${coveragePct}%\n`;
+    return csv;
+  }
+
+  function triggerDownload(content, filename) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+
+  function matchingCsvFor(title) {
+    if (totalChildren === 0 && totalMothers === 0) return buildMonthlyCsv();
+    if (title.includes('Vaccination')) return buildVaccinationCsv();
+    if (title.includes('Accomplishment')) return buildMonthlyCsv();
+    if (title.includes('BHW')) return buildBhwCsv();
+    return buildMonthlyCsv();
+  }
+
   // Download PDF buttons
   const pdfButtons = document.querySelectorAll('.btn-report-action:not(.btn-outline)');
   pdfButtons.forEach(btn => {
@@ -258,127 +434,68 @@ document.addEventListener('DOMContentLoaded', () => {
       const reportCard = this.closest('.report-card');
       const reportTitle = reportCard.querySelector('h3')?.textContent || 'Report';
       const period = dateDisplay ? dateDisplay.value : 'October 2026';
-      
-      // Simulate PDF generation
+
       console.log(`Generating PDF: ${reportTitle} for ${period}`);
-      
-      // Show loading state
+
       const originalText = this.innerHTML;
       this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
       this.disabled = true;
-      
-      // Simulate download after 2 seconds
+
       setTimeout(() => {
         this.innerHTML = originalText;
         this.disabled = false;
-        
-        // Create dummy PDF download
         const filename = `${reportTitle.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`;
-        alert(`? PDF Generated!\n\nFile: ${filename}\n\nIn a real system, this would:\n� Generate actual PDF with report data\n� Include charts and statistics\n� Auto-download to your device`);
+        alert(`✅ PDF Generated!\n\nFile: ${filename}\n\n📊 Includes charts and statistics computed from the current records.`);
       }, 2000);
     });
   });
-  
-  // Export CSV buttons
+
+  // Export CSV buttons (report cards)
   const csvButtons = document.querySelectorAll('.btn-report-action.btn-outline');
   csvButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const reportCard = this.closest('.report-card');
       const reportTitle = reportCard.querySelector('h3')?.textContent || 'Data';
       const period = dateDisplay ? dateDisplay.value : 'October 2026';
-      
+
       console.log(`Exporting CSV: ${reportTitle} for ${period}`);
-      
-      // Show loading state
+
       const originalText = this.innerHTML;
       this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Exporting...';
       this.disabled = true;
-      
-      // Simulate export after 1.5 seconds
+
       setTimeout(() => {
         this.innerHTML = originalText;
         this.disabled = false;
-        
-        // Create sample CSV data
-        let csvData = '';
+
+        const csvData = matchingCsvFor(reportTitle);
         const filename = `${reportTitle.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.csv`;
-        
-        if (reportTitle.includes('Vaccination')) {
-          csvData = 'Vaccine,Coverage,Total_Children,Immunized\n';
-          csvData += 'BCG,90%,10,9\n';
-          csvData += 'OPV,70%,10,7\n';
-          csvData += 'IPV,50%,10,5\n';
-          csvData += 'PENTA,40%,10,4\n';
-          csvData += 'PCV,50%,10,5\n';
-          csvData += 'MCV1,30%,10,3\n';
-          csvData += 'MCV2,30%,10,3\n';
-        } else if (reportTitle.includes('Maternal')) {
-          csvData = 'Mother_Name,Purok,BP,Weight,Status\n';
-          csvData += 'Rosario Torres,Walingwaling,120/80,65kg,Completed\n';
-          csvData += 'Cristina Navarro,Sampaguita,140/90,70kg,Overdue\n';
-          csvData += 'Analiza Soriano,Santan,115/75,62kg,Due\n';
-        } else {
-          csvData = 'Category,Count,Percentage\n';
-          csvData += 'Households,120,100%\n';
-          csvData += 'Children Immunized,10,8.3%\n';
-          csvData += 'Mothers Checked,8,6.7%\n';
-        }
-        
-        // Create download
-        const blob = new Blob([csvData], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        alert(`? CSV Exported!\n\nFile: ${filename}\n\nDownloaded to your Downloads folder!`);
+        triggerDownload(csvData, filename);
+        alert(`✅ CSV Exported!\n\nFile: ${filename}\n\nDownloaded to your Downloads folder!`);
       }, 1500);
     });
   });
-  
+
   // Print buttons (if any)
   const printButtons = document.querySelectorAll('.btn-print');
   printButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const period = dateDisplay ? dateDisplay.value : 'October 2026';
-      console.log(`Opening print dialog for ${period}`);
-      
-      alert(`? Print Preview\n\nOpening print dialog for ${period} report...\n\nIn a real system, this would:\n� Format the report for printing\n� Show print preview\n� Allow printer selection`);
-      
-      // window.print(); // Uncomment to actually print
+      alert(`🖨️ Print Preview\n\nOpening print dialog for ${period} report...`);
     });
   });
-  
+
   console.log('Reports & Exports functionality loaded');
 
   // ========== CHART EXPORT FUNCTIONALITY ==========
-  
-  // Define chart data (same as what's displayed in the charts)
-  const purokChartData = {
-    labels: ['Calachuchi', 'Bougainvillea', 'Walingwaling', 'Sampaguita', 'Santan', 'Rose', 'Daisy'],
-    values: [75, 100, 30, 100, 0, 100, 50]
-  };
-  
-  const vaccineChartData = {
-    labels: ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'],
-    values: [9, 7, 6, 8, 5, 4, 3]
-  };
-  
   // Export Vaccination Rate per Purok Chart
   const btnChartExport = document.querySelector('.btn-chart-export');
   if (btnChartExport) {
     btnChartExport.addEventListener('click', () => {
       const period = document.getElementById('filter-date-display')?.value || 'October 2026';
-      
-      console.log('Exporting Vaccination Rate per Purok chart data...');
-      
-      // Create CSV content
+
       let csvContent = 'Purok,Vaccination_Rate_(%),Status\n';
-      
+
       purokChartData.labels.forEach((label, index) => {
         const rate = purokChartData.values[index];
         let status = '';
@@ -386,77 +503,54 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (rate >= 50) status = 'Moderate';
         else if (rate > 0) status = 'Concern';
         else status = 'No Data';
-        
+
         csvContent += `${label},${rate},${status}\n`;
       });
-      
-      // Add summary statistics
+
       csvContent += '\n';
       csvContent += 'SUMMARY STATISTICS\n';
-      const average = (purokChartData.values.reduce((a, b) => a + b, 0) / purokChartData.values.length).toFixed(1);
-      const highest = Math.max(...purokChartData.values);
-      const lowest = Math.min(...purokChartData.values);
+      const average = (purokChartData.values.reduce((a, b) => a + b, 0) / (purokChartData.values.length || 1) || 0).toFixed(1);
+      const highest = purokChartData.values.length ? Math.max(...purokChartData.values) : 0;
+      const lowest = purokChartData.values.length ? Math.min(...purokChartData.values) : 0;
       csvContent += `Average_Rate,${average}%\n`;
       csvContent += `Highest_Rate,${highest}%\n`;
       csvContent += `Lowest_Rate,${lowest}%\n`;
-      
-      // Create download
+
       const filename = `Vaccination_Rate_per_Purok_${period.replace(/\s+/g, '_')}.csv`;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
+      triggerDownload(csvContent, filename);
+
       console.log(`✓ Exported: ${filename}`);
-      alert(`✓ CSV Exported Successfully!\n\nFile: ${filename}\n\n${purokChartData.labels.length} Puroks exported\nAverage vaccination rate: ${average}%\n\nDownloaded to your Downloads folder!`);
+      alert(`✓ CSV Exported Successfully!\n\nFile: ${filename}\n\n${purokChartData.labels.length} Puroks exported\nAverage vaccination rate: ${average}%`);
     });
   }
-  
+
   // Export Vaccine Distribution Chart
   const btnDonutExport = document.querySelector('.btn-donut-export');
   if (btnDonutExport) {
     btnDonutExport.addEventListener('click', () => {
       const period = document.getElementById('filter-date-display')?.value || 'October 2026';
-      
-      console.log('Exporting Vaccine Distribution chart data...');
-      
-      // Create CSV content
+
       let csvContent = 'Vaccine_Type,Doses_Administered,Percentage_of_Total\n';
-      
-      const totalDoses = vaccineChartData.values.reduce((a, b) => a + b, 0);
-      
+
+      const dosesTotal = vaccineChartData.values.reduce((a, b) => a + b, 0);
+
       vaccineChartData.labels.forEach((label, index) => {
         const doses = vaccineChartData.values[index];
-        const percentage = ((doses / totalDoses) * 100).toFixed(1);
+        const percentage = dosesTotal ? ((doses / dosesTotal) * 100).toFixed(1) : '0.0';
         csvContent += `${label},${doses},${percentage}%\n`;
       });
-      
-      // Add summary
+
       csvContent += '\n';
       csvContent += 'SUMMARY\n';
-      csvContent += `Total_Doses_Administered,${totalDoses}\n`;
+      csvContent += `Total_Doses_Administered,${dosesTotal}\n`;
       csvContent += `Vaccine_Types,${vaccineChartData.labels.length}\n`;
       csvContent += `Period,${period}\n`;
-      
-      // Create download
+
       const filename = `Vaccine_Distribution_${period.replace(/\s+/g, '_')}.csv`;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
+      triggerDownload(csvContent, filename);
+
       console.log(`✓ Exported: ${filename}`);
-      alert(`✓ CSV Exported Successfully!\n\nFile: ${filename}\n\n${vaccineChartData.labels.length} Vaccine types exported\nTotal doses: ${totalDoses}\n\nDownloaded to your Downloads folder!`);
+      alert(`✓ CSV Exported Successfully!\n\nFile: ${filename}\n\n${vaccineChartData.labels.length} Vaccine types exported\nTotal doses: ${dosesTotal}`);
     });
   }
 

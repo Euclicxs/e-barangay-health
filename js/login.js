@@ -54,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
           firstName: user.firstName,
           lastName: user.lastName,
           middleInitial: user.middleInitial,
-          contact: user.contact
+          contact: user.contact,
+          assignedPuroks: Array.isArray(user.assignedPuroks) ? user.assignedPuroks : []
         });
         
         window.location.href = 'dashboard.html';

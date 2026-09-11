@@ -45,15 +45,24 @@ function setupTest() {
       
       // Mock session functions to prevent redirect
       window.getSession = () => ({ 
-        userType: 'admin', 
-        userName: 'Test Admin', 
-        userId: 'admin01',
+        userType: 'bhw', 
+        userName: 'Test BHW', 
+        userId: 'bhw01',
+        firstName: 'Test',
+        lastName: 'BHW',
+        middleInitial: 'T',
         loginTime: Date.now(),
         expiresAt: Date.now() + 24 * 60 * 60 * 1000
       });
-      window.getCurrentUserName = () => 'Test Admin';
-      window.getCurrentUserId = () => 'admin01';
+      window.getCurrentUserName = () => 'Test T. BHW';
+      window.getCurrentUserId = () => 'bhw01';
       window.clearSession = () => {};
+      window.validateSession = (required) => {
+        const s = window.getSession();
+        if (!s) return false;
+        if (required && s.userType !== required) return false;
+        return true;
+      };
     }
   });
   

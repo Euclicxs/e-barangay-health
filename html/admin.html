@@ -6,6 +6,7 @@
   <title>Admin Dashboard - e-Barangay Health System</title>
   <link rel="stylesheet" href="../css/admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -35,6 +36,24 @@
             <a href="#" class="nav-link" data-section="login-history">
               <i class="fa-solid fa-clock-rotate-left"></i>
               <span>Login History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="menu-section">
+        <span class="menu-title">DATA MANAGEMENT</span>
+        <ul class="menu-list">
+          <li>
+            <a href="#" class="nav-link" data-section="purok-masterlist">
+              <i class="fa-solid fa-clipboard-list"></i>
+              <span>Purok Masterlists</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link" data-section="data-analytics">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Data Analytics</span>
             </a>
           </li>
         </ul>
@@ -127,6 +146,7 @@
                   <th>Name</th>
                   <th>Contact Number</th>
                   <th>Date of Birth</th>
+                  <th>Assigned Puroks</th>
                   <th>Status</th>
                   <th>Last Login</th>
                   <th>Actions</th>
@@ -178,6 +198,211 @@
         </div>
       </section>
 
+      <!-- PUROK MASTERLISTS SECTION -->
+      <section id="purok-masterlist-section" class="content-section">
+        <div class="section-header">
+          <h1><i class="fa-solid fa-clipboard-list"></i> Purok Masterlists</h1>
+          <p>Community health roster — Brgy. New Katipunan, Matanao</p>
+          <button class="btn-print" id="btnPrintPurok">
+            <i class="fa-solid fa-file-pdf"></i> Print Field Visit Sheet (PDF)
+          </button>
+        </div>
+
+        <!-- PUROK FILTER TABS -->
+        <div class="purok-tabs">
+          <button class="purok-tab active" data-purok="calachuchi">Calachuchi</button>
+          <button class="purok-tab" data-purok="bougainvillea">Bougainvillea <span class="tab-dot dot-red"></span></button>
+          <button class="purok-tab" data-purok="walingwaling">Walingwaling <span class="tab-dot dot-red"></span></button>
+          <button class="purok-tab" data-purok="sampaguita">Sampaguita <span class="tab-dot dot-red"></span></button>
+          <button class="purok-tab" data-purok="santan">Santan <span class="tab-dot dot-red"></span></button>
+          <button class="purok-tab" data-purok="rose">Rose</button>
+          <button class="purok-tab" data-purok="daisy">Daisy</button>
+        </div>
+
+        <!-- PUROK SUMMARY CARDS -->
+        <div class="purok-stats-grid">
+          <div class="purok-stat-card">
+            <h2 id="stat-households" class="text-cyan">0</h2>
+            <div>
+              <h3>Total Households</h3>
+              <p id="stat-households-sub">Registered in Calachuchi</p>
+            </div>
+          </div>
+          <div class="purok-stat-card">
+            <h2 id="stat-population" class="text-blue">0</h2>
+            <div>
+              <h3>Total Population</h3>
+              <p id="stat-population-sub">0 children · 0 mothers</p>
+            </div>
+          </div>
+          <div class="purok-stat-card">
+            <h2 id="stat-due" class="text-yellow">0</h2>
+            <div>
+              <h3>Due for Visit</h3>
+              <p id="stat-due-sub">0 overdue · 0 due this month</p>
+            </div>
+          </div>
+          <div class="purok-stat-card">
+            <h2 id="stat-bhws" class="text-blue">0</h2>
+            <div>
+              <h3>Assigned BHWs</h3>
+              <p id="stat-bhws-sub">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PUROK TABLE -->
+        <div class="content-card table-card">
+          <div class="card-header">
+            <h3 id="table-title">Purok Calachuchi — Health Records</h3>
+            <span class="entries-count" id="entries-count">0 entries</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Child / Mother Name</th>
+                  <th>Type</th>
+                  <th>Purok Address</th>
+                  <th>Immunization Status</th>
+                  <th>Next Visit</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="purok-table-body">
+                <!-- Purok rows will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- DATA ANALYTICS SECTION -->
+      <section id="data-analytics-section" class="content-section">
+        <div class="section-header">
+          <h1><i class="fa-solid fa-chart-pie"></i> Data Analytics</h1>
+          <p>Descriptive & Prescriptive analytics for Brgy. New Katipunan health records</p>
+        </div>
+
+        <!-- DATE FILTER CONTROLS -->
+        <div class="analytics-date-filter">
+          <button class="btn-quick-date active" data-range="month">This Month</button>
+          <button class="btn-quick-date" data-range="quarter">Last 3 Months</button>
+          <button class="btn-quick-date" data-range="year">This Year</button>
+          <button class="btn-quick-date" data-range="all">All Time</button>
+        </div>
+
+        <!-- DESCRIPTIVE ANALYTICS: STAT CARDS -->
+        <div class="admin-stats-grid analytics-stats">
+          <div class="stat-card admin-blue">
+            <h2 id="analyticsTotalRecords">0</h2>
+            <h3>Total Records</h3>
+            <p>All child & maternal records</p>
+          </div>
+          <div class="stat-card admin-red">
+            <h2 id="analyticsOverdue">0</h2>
+            <h3>Overdue</h3>
+            <p>Missed visit schedules</p>
+          </div>
+          <div class="stat-card admin-yellow">
+            <h2 id="analyticsDueMonth">0</h2>
+            <h3>Due This Month</h3>
+            <p>Upcoming visits</p>
+          </div>
+          <div class="stat-card admin-green">
+            <h2 id="analyticsCompleted">0</h2>
+            <h3>Completed</h3>
+            <p>On-track visits</p>
+          </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="analytics-charts-grid">
+          <!-- BAR CHART: Records per Purok -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-bar text-cyan"></i> Records per Purok</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="purokBarChart"></canvas>
+            </div>
+          </div>
+
+          <!-- DONUT CHART: Status Distribution -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-pie text-cyan"></i> Status Distribution</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="statusDonutChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- VACCINE COVERAGE RATE -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-capsules text-cyan"></i> Vaccination Coverage by Type</h3>
+          </div>
+          <div class="coverage-list" id="vaccCoverageList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- PRESCRIPTIVE ANALYTICS -->
+        <div class="section-header" style="margin-top: 30px;">
+          <h1><i class="fa-solid fa-lightbulb"></i> Prescriptive Analytics</h1>
+          <p>Recommendations and priority actions based on current data</p>
+        </div>
+
+        <div class="analytics-prescriptive-grid">
+          <!-- PRIORITY PUROKS -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-ranking-star text-cyan"></i> Purok Priority Ranking</h3>
+            </div>
+            <div id="priorityRanking" class="priority-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- RECOMMENDATIONS -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-clipboard-check text-cyan"></i> Recommendations</h3>
+            </div>
+            <div id="recommendationsPanel" class="recommendations-panel">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- BHW WORKLOAD ANALYSIS -->
+        <div class="content-card" style="margin-top: 20px;">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-users-gear text-cyan"></i> BHW Workload Analysis</h3>
+          </div>
+          <div class="table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>BHW Name</th>
+                  <th>Assigned Puroks</th>
+                  <th>Total Records</th>
+                  <th>Overdue</th>
+                  <th>Due This Month</th>
+                  <th>Workload Status</th>
+                </tr>
+              </thead>
+              <tbody id="bhwWorkloadTable">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
     </main>
   </div>
 
@@ -216,6 +441,14 @@
           <div class="form-group full-width">
             <label>Date of Birth</label>
             <input type="date" id="userDob" required>
+          </div>
+        </div>
+
+        <!-- Assigned Puroks -->
+        <div class="form-group full-width" style="margin-top: 6px;">
+          <label>Assigned Puroks</label>
+          <div class="purok-checkbox-group" id="assignedPuroksGroup">
+            <!-- Purok checkbox chips populated by JavaScript -->
           </div>
         </div>
 
@@ -265,6 +498,7 @@
 
   <script src="../js/credentials.js"></script>
   <script src="../js/session.js"></script>
+  <script src="../js/purok-data.js"></script>
   <script src="../js/admin.js"></script>
 </body>
 </html>

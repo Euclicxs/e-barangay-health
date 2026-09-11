@@ -25,6 +25,7 @@ const BHW_CREDENTIALS = [
     dob: '1985-03-15',
     password: 'prelin123',
     status: 'active',
+    assignedPuroks: ['calachuchi', 'daisy'],
     lastLogin: new Date(Date.now() - 3600000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -37,6 +38,7 @@ const BHW_CREDENTIALS = [
     dob: '1987-06-22',
     password: 'flora123',
     status: 'active',
+    assignedPuroks: ['calachuchi', 'daisy'],
     lastLogin: new Date(Date.now() - 7200000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -49,6 +51,7 @@ const BHW_CREDENTIALS = [
     dob: '1982-09-10',
     password: 'virginia123',
     status: 'active',
+    assignedPuroks: ['bougainvillea'],
     lastLogin: new Date(Date.now() - 86400000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -61,6 +64,7 @@ const BHW_CREDENTIALS = [
     dob: '1990-02-25',
     password: 'rosalie123',
     status: 'active',
+    assignedPuroks: ['walingwaling'],
     lastLogin: new Date(Date.now() - 172800000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -73,6 +77,7 @@ const BHW_CREDENTIALS = [
     dob: '1988-11-18',
     password: 'jessie123',
     status: 'active',
+    assignedPuroks: ['walingwaling'],
     lastLogin: new Date(Date.now() - 259200000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -85,6 +90,7 @@ const BHW_CREDENTIALS = [
     dob: '1991-04-07',
     password: 'rosevilla123',
     status: 'active',
+    assignedPuroks: ['sampaguita'],
     lastLogin: new Date(Date.now() - 345600000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -97,6 +103,7 @@ const BHW_CREDENTIALS = [
     dob: '1986-08-14',
     password: 'margarita123',
     status: 'active',
+    assignedPuroks: ['santan'],
     lastLogin: new Date(Date.now() - 432000000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   },
@@ -109,6 +116,7 @@ const BHW_CREDENTIALS = [
     dob: '1989-12-03',
     password: 'bernardita123',
     status: 'active',
+    assignedPuroks: ['rose'],
     lastLogin: new Date(Date.now() - 518400000).toISOString(),
     createdAt: new Date('2024-01-15').toISOString()
   }
@@ -117,7 +125,7 @@ const BHW_CREDENTIALS = [
 // Helper function to generate BHW ID
 function generateBHWId() {
   const maxId = BHW_CREDENTIALS.reduce((max, user) => {
-    const num = parseInt(user.id.replace('BHW', ''));
+    const num = parseInt(user.id.toUpperCase().replace('BHW', ''));
     return num > max ? num : max;
   }, 0);
   
@@ -133,10 +141,15 @@ function generatePassword(firstName, lastName) {
   return `${baseName}123`;
 }
 
+// Normalize BHW ID for case-insensitive comparisons (in-memory ids are lowercase, generated ids are uppercase)
+function normalizeBhwId(userId) {
+  return String(userId || '').toLowerCase();
+}
+
 // Helper function to validate BHW login
 function validateBHWLogin(username, password) {
   const user = BHW_CREDENTIALS.find(u => 
-    u.id === username || 
+    normalizeBhwId(u.id) === normalizeBhwId(username) || 
     `${u.firstName}${u.lastName}`.toLowerCase() === username.toLowerCase()
   );
   
@@ -146,9 +159,57 @@ function validateBHWLogin(username, password) {
   return null;
 }
 
-// Helper function to get user by ID
+// Helper function to get user by ID (case-insensitive)
 function getUserById(userId) {
-  return BHW_CREDENTIALS.find(u => u.id === userId);
+  const normalized = normalizeBhwId(userId);
+  return BHW_CREDENTIALS.find(u => normalizeBhwId(u.id) === normalized);
+}
+
+// Get assigned purok keys for a given BHW id (case-insensitive), fallback to session value
+function getAssignedPuroks(userId, fallbackKeys) {
+  const user = getUserById(userId);
+  if (user && Array.isArray(user.assignedPuroks) && user.assignedPuroks.length > 0) {
+    return user.assignedPuroks;
+  }
+  if (Array.isArray(fallbackKeys) && fallbackKeys.length > 0) {
+    return fallbackKeys;
+  }
+  return [];
+}
+
+// Get assigned puroks for the currently logged-in BHW (null => show all puroks)
+function getCurrentUserAssignedPuroks() {
+  if (typeof getSession !== 'function') return null;
+
+  const session = getSession();
+  if (!session || session.userType !== 'bhw') return null;
+
+  const user = getUserById(session.userId);
+  if (user && Array.isArray(user.assignedPuroks) && user.assignedPuroks.length > 0) {
+    return user.assignedPuroks;
+  }
+  if (Array.isArray(session.assignedPuroks) && session.assignedPuroks.length > 0) {
+    return session.assignedPuroks;
+  }
+  return null; // no assignment => show all
+}
+
+// Get active BHW users assigned to a given purok key
+function getUsersByPurokKey(purokKey) {
+  return BHW_CREDENTIALS.filter(u =>
+    u.status === 'active' &&
+    Array.isArray(u.assignedPuroks) &&
+    u.assignedPuroks.includes(purokKey)
+  );
+}
+
+// Derive the display "Assigned BHWs" names for a purok from live assignments
+function getPurokBhwNames(purokKey) {
+  const users = getUsersByPurokKey(purokKey);
+  if (users.length === 0) return null;
+  return users
+    .map(u => `${u.firstName} ${u.middleInitial ? u.middleInitial + '. ' : ''}${u.lastName}`)
+    .join(' · ');
 }
 
 // Helper function to add new user
@@ -165,6 +226,7 @@ function addUser(userData) {
     dob: userData.dob,
     password: autoPassword,
     status: 'active', // Default to active
+    assignedPuroks: userData.assignedPuroks || [],
     lastLogin: null,
     createdAt: new Date().toISOString()
   };

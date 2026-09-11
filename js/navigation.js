@@ -13,8 +13,7 @@
   const pageMap = {
     'dashboard.html': 'dashboard.html',
     'child.html': 'child.html',
-    'maternal.html': 'maternal.html',
-    'purok.html': 'purok.html',
+'maternal.html': 'maternal.html',
     'reports.html': 'reports.html',
     'security.html': 'security.html'
   };

@@ -8,7 +8,7 @@
  * **Validates**: Requirements 1.5, 1.6 from bugfix.md
  * **Property 3**: Logo Path Correctness
  * 
- * **Expected Outcome**: Tests FAIL - child.html, maternal.html, purok.html reference ../image/logo.png instead of ../assets/logo.png
+ * **Expected Outcome**: Tests FAIL - child.html, maternal.html reference ../image/logo.png instead of ../assets/logo.png
  */
 
 const { JSDOM } = require('jsdom');
@@ -136,13 +136,6 @@ function runTests() {
     console.log('✓ Logo path is correct');
   });
   
-  test('Bug Test 3: purok.html logo src should be ../assets/logo.png', () => {
-    console.log('=== Bug Test 3: purok.html Logo Path ===');
-    const logoSrc = checkLogoSrc('purok.html', '../assets/logo.png');
-    expect(logoSrc).toBe('../assets/logo.png');
-    console.log('✓ Logo path is correct');
-  });
-  
   test('Bug Test 4: Logo file should exist at ../assets/logo.png path', () => {
     console.log('=== Bug Test 4: Logo File Existence ===');
     
@@ -245,7 +238,7 @@ function runTests() {
     
     console.log('\n' + '='.repeat(70));
     console.log('CONCLUSION: Tests failed as expected - bug is confirmed!');
-    console.log('The logo paths in child.html, maternal.html, and purok.html are incorrect.');
+    console.log('The logo paths in child.html and maternal.html are incorrect.');
     console.log('They reference ../image/logo.png which does not exist.');
     console.log('Correct path should be: ../assets/logo.png');
     console.log('='.repeat(70));
