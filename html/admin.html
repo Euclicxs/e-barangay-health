@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - E-Barangay Health System</title>
-  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/admin.css?v=20260912b">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 </head>
@@ -377,16 +377,6 @@
               <canvas id="purokBarChart"></canvas>
             </div>
           </div>
-
-          <!-- DONUT CHART: Status Distribution -->
-          <div class="content-card">
-            <div class="card-header">
-              <h3><i class="fa-solid fa-chart-pie text-cyan"></i> Status Distribution</h3>
-            </div>
-            <div class="chart-container">
-              <canvas id="statusDonutChart"></canvas>
-            </div>
-          </div>
         </div>
 
         <!-- VACCINE COVERAGE -->
@@ -411,13 +401,20 @@
           </div>
         </div>
 
-        <!-- TOP VACCINE GAPS -->
+        <!-- STRENGTHS & WEAKNESSES SUMMARY -->
         <div class="content-card">
           <div class="card-header">
-            <h3><i class="fa-solid fa-triangle-exclamation text-cyan"></i> Top Vaccine Gaps</h3>
+            <h3><i class="fa-solid fa-scale-balanced text-cyan"></i> Coverage Summary: Strengths &amp; Weaknesses</h3>
           </div>
-          <div class="chart-container">
-            <canvas id="vaccineGapChart"></canvas>
+          <div class="sw-grid">
+            <div class="sw-col sw-good">
+              <h4><i class="fa-solid fa-circle-check"></i> Strengths</h4>
+              <ul id="swStrengthsList"></ul>
+            </div>
+            <div class="sw-col sw-bad">
+              <h4><i class="fa-solid fa-triangle-exclamation"></i> Weaknesses</h4>
+              <ul id="swWeaknessesList"></ul>
+            </div>
           </div>
         </div>
 
@@ -433,7 +430,6 @@
                   <th>Purok</th>
                   <th>Children</th>
                   <th>Mothers</th>
-                  <th>Fully Vaccinated</th>
                   <th>TT5 Reach</th>
                   <th>Iron</th>
                   <th>Elevated BP</th>
@@ -447,7 +443,7 @@
         <!-- PRESCRIPTIVE ANALYTICS -->
         <div class="section-header" style="margin-top: 30px;">
           <h1><i class="fa-solid fa-lightbulb"></i> Prescriptive Analytics</h1>
-          <p>Recommendations and priority actions based on current data</p>
+          <p>Recommendations and priority actions based on all-time records</p>
         </div>
 
         <div class="analytics-prescriptive-grid">
@@ -605,23 +601,63 @@
         <button type="button" class="btn-close-modal" id="closeCoverageListBtn">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="coverage-list-grid">
-          <div class="coverage-list-col">
-            <h3 class="coverage-list-head covered" id="coverageListCoveredTitle">Covered</h3>
-            <ul class="coverage-name-list" id="coverageListCovered"></ul>
+        <!-- LIST VIEW: who is covered vs not -->
+        <div id="coverageModalListView">
+          <div class="coverage-list-grid">
+            <div class="coverage-list-col">
+              <h3 class="coverage-list-head covered" id="coverageListCoveredTitle">Covered</h3>
+              <ul class="coverage-name-list" id="coverageListCovered"></ul>
+            </div>
+            <div class="coverage-list-col">
+              <h3 class="coverage-list-head missing" id="coverageListPendingTitle">Not covered</h3>
+              <ul class="coverage-name-list" id="coverageListPending"></ul>
+            </div>
           </div>
-          <div class="coverage-list-col">
-            <h3 class="coverage-list-head missing" id="coverageListPendingTitle">Not covered</h3>
-            <ul class="coverage-name-list" id="coverageListPending"></ul>
+          <div class="coverage-modal-action">
+            <button type="button" class="btn-gaps" id="btnShowGapsChart">
+              <i class="fa-solid fa-chart-column"></i> View Coverage Gaps Chart
+            </button>
+          </div>
+        </div>
+
+        <!-- CHART VIEW: coverage gaps chart -->
+        <div id="coverageModalChartView" style="display:none;">
+          <div class="modal-chart-head">
+            <h3 id="modalGapChartTitle">Coverage Gaps</h3>
+            <button type="button" class="btn-export" id="btnBackToList"><i class="fa-solid fa-arrow-left"></i> Back to list</button>
+          </div>
+          <div class="chart-container modal-chart-box">
+            <canvas id="modalGapChart"></canvas>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="../js/credentials.js"></script>
-  <script src="../js/session.js"></script>
-  <script src="../js/purok-data.js"></script>
-  <script src="../js/admin.js"></script>
+  <!-- RECORD DETAIL MODAL (remaining vaccines / injections per person) -->
+  <div id="recordDetailModal" class="modal">
+    <div class="modal-content record-detail-modal">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" id="recordDetailIcon"><i class="fa-solid fa-child"></i></div>
+          <div>
+            <h2 id="recordDetailName">Record</h2>
+            <p id="recordDetailMeta">Health record details</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="closeRecordDetailBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="recordDetailBody">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/credentials.js?v=20260912b"></script>
+  <script src="../js/session.js?v=20260912b"></script>
+  <script src="../js/purok-data.js?v=20260912b"></script>
+  <script src="../js/admin.js?v=20260912b"></script>
 </body>
 </html>

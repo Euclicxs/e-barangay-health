@@ -196,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === encodeModal) closeEncodeModal();
     if (event.target === updateModal) closeUpdateModal();
     if (event.target === viewModal) closeViewModal();
+    if (event.target === document.getElementById('recordDetailModal')) closeRecordDetail();
   });
 
 
@@ -452,6 +453,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const nameCell = document.createElement('td');
     const nameStrong = document.createElement('strong');
+    nameStrong.className = 'clickable-name';
+    nameStrong.setAttribute('data-code', rec.code);
+    nameStrong.title = 'View remaining vaccines/injections';
     nameStrong.textContent = rec.name;
     nameCell.appendChild(nameStrong);
     nameCell.appendChild(document.createElement('br'));
@@ -660,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildCoverageNameList(items) {
     if (!items.length) return '<li class="coverage-list-empty">No one in this group</li>';
     return items.map(item =>
-      `<li><i class="fa-solid fa-circle"></i><strong title="${item.rec.name}">${item.rec.name}</strong><span>Purok ${item.purok}</span></li>`
+      `<li data-code="${item.rec.code || ''}"><i class="fa-solid fa-circle"></i><strong class="clickable-name" data-code="${item.rec.code || ''}" title="View remaining vaccines/injections">${item.rec.name}</strong><span>Purok ${item.purok}</span></li>`
     ).join('');
   }
 
@@ -716,6 +720,157 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     });
   }
+
+  // ========== RECORD DETAIL MODAL (remaining vaccines / injections per person) ==========
+  function buildChildRecordMap() {
+    const map = {};
+    const all = (typeof getAllPurokRecords === 'function') ? getAllPurokRecords() : [];
+    all.forEach(rec => { if (rec && rec.code) map[rec.code] = rec; });
+    return map;
+  }
+
+  function isRecordDetailOpen() {
+    const m = document.getElementById('recordDetailModal');
+    return !!(m && m.style.display === 'flex');
+  }
+
+  function renderRecordDetail(code) {
+    const rec = buildChildRecordMap()[code];
+    if (!rec) return;
+
+    const isChild = rec.type === 'Child';
+    const iconEl = document.getElementById('recordDetailIcon');
+    if (iconEl) iconEl.innerHTML = isChild
+      ? '<i class="fa-solid fa-child"></i>'
+      : '<i class="fa-solid fa-person-pregnant"></i>';
+    const nameEl = document.getElementById('recordDetailName');
+    if (nameEl) nameEl.textContent = rec.name;
+    const metaEl = document.getElementById('recordDetailMeta');
+    if (metaEl) metaEl.textContent = `${rec.type} · ${rec.code} · Purok ${rec.purok} · ${rec.address || 'No address'}`;
+
+    const body = document.getElementById('recordDetailBody');
+    if (!body) return;
+
+    const vaxCodes = typeof VACCINES !== 'undefined' ? VACCINES : ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+    const parseBp = (bp) => {
+      const parts = String(bp || '').split('/');
+      return { sys: parseInt(parts[0], 10) || 0, dia: parseInt(parts[1], 10) || 0 };
+    };
+    const isHighBp = (bp) => {
+      const { sys, dia } = parseBp(bp);
+      return sys >= 130 || dia >= 80;
+    };
+
+    let html = '';
+    if (isChild) {
+      const had = Array.isArray(rec.vaccines) ? rec.vaccines : [];
+      const missingNames = vaxCodes.filter(v => !had.includes(v));
+
+      html = `
+        <div class="detail-banner ${missingNames.length === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingNames.length === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingNames.length === 0
+            ? 'Fully vaccinated — all routine vaccine doses received.'
+            : `${missingNames.length} of ${vaxCodes.length} routine vaccine(s) still missing.`}</span>
+        </div>
+        <div class="detail-summary">${had.length}/${vaxCodes.length} vaccines received</div>
+        <div class="detail-grid">
+          ${vaxCodes.map(v => {
+            const has = had.includes(v);
+            return `
+              <div class="detail-row ${has ? 'ok' : 'miss'}">
+                <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                <span class="detail-label">${v}</span>
+                <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+              </div>`;
+          }).join('')}
+        </div>
+        ${missingNames.length ? `
+          <div class="chips-label">Not yet vaccinated:</div>
+          <div class="chip-row">${missingNames.map(n => `<span class="chip-missing">${n}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    } else {
+      const level = parseInt(String(rec.ttDose).replace(/\D/g, ''), 10) || 0;
+      const missingTt = 5 - level;
+      const missingIron = rec.iron ? 0 : 1;
+      const missingTotal = missingTt + missingIron;
+      const bpReading = rec.bp ? String(rec.bp) : '';
+      const bpHigh = isHighBp(rec.bp);
+      const bpStatus = !bpReading ? 'No reading' : (bpHigh ? 'Elevated' : 'Normal');
+      const bpClass = !bpReading ? 'na' : (bpHigh ? 'miss' : 'ok');
+      const ttRows = [];
+      for (let dose = 1; dose <= 5; dose++) {
+        const has = level >= dose;
+        ttRows.push(`
+          <div class="detail-row ${has ? 'ok' : 'miss'}">
+            <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">TT ${dose}</span>
+            <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+          </div>`);
+      }
+
+      html = `
+        <div class="detail-banner ${missingTotal === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingTotal === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingTotal === 0
+            ? 'All routine maternal injections are up to date.'
+            : `${missingTotal} injection item(s) still missing${missingIron ? ' (including iron supplementation)' : ''}.`}</span>
+        </div>
+        <div class="detail-summary">Current TT level: <strong>${level > 0 ? `TT ${level}` : 'None yet'}</strong></div>
+        <div class="detail-grid">
+          ${ttRows.join('')}
+          <div class="detail-row ${rec.iron ? 'ok' : 'miss'}">
+            <i class="fa-solid ${rec.iron ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">Iron Supplementation</span>
+            <span class="detail-status">${rec.iron ? 'Received' : 'Missing'}</span>
+          </div>
+          <div class="detail-row ${bpClass}">
+            <i class="fa-solid ${!bpReading ? 'fa-circle-info' : (bpHigh ? 'fa-circle-exclamation' : 'fa-circle-check')}"></i>
+            <span class="detail-label">Blood Pressure</span>
+            <span class="detail-status">${bpReading ? `${bpReading} — ${bpStatus}` : bpStatus}</span>
+          </div>
+        </div>
+        ${missingTt > 0 ? `
+          <div class="chips-label">Remaining tetanus toxoid doses:</div>
+          <div class="chip-row">${Array.from({ length: missingTt }, (_, i) => `<span class="chip-missing">TT ${level + 1 + i}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    }
+
+    body.innerHTML = html;
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeRecordDetail() {
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'none';
+    const body = document.getElementById('recordDetailBody');
+    if (body) body.innerHTML = '';
+  }
+
+  const closeRecordDetailBtn = document.getElementById('closeRecordDetailBtn');
+  if (closeRecordDetailBtn) closeRecordDetailBtn.addEventListener('click', closeRecordDetail);
+
+  // Capture-phase fallback so name clicks always open the detail modal even if another
+  // handler ever calls stopPropagation() (covers table names + coverage list names).
+  document.addEventListener('click', function(e) {
+    const el = e.target && e.target.closest ? e.target.closest('[data-code]') : null;
+    if (!el) return;
+    const code = el.getAttribute('data-code');
+    if (!code) return;
+    renderRecordDetail(code);
+  }, true);
+
+  // Escape closes the detail modal first (then falls through to the coverage-modal handler).
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    if (isRecordDetailOpen()) {
+      closeRecordDetail();
+      e.stopPropagation();
+    }
+  }, true);
 
   // Rendered rows are not present at initial binding time, so handle View clicks by delegation.
   document.addEventListener('click', function(e) {

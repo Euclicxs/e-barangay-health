@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Child Immunization - E-Barangay Health</title>
-  <link rel="stylesheet" href="../css/child.css">
+  <link rel="stylesheet" href="../css/child.css?v=20260912c">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="../css/theme-override.css">
+  <link rel="stylesheet" href="../css/theme-override.css?v=20260912c">
 </head>
 <body>
 
@@ -517,9 +517,28 @@
     </div>
   </div>
 
-  <script src="../js/session.js"></script>
-  <script src="../js/credentials.js"></script>
-  <script src="../js/purok-data.js"></script>
-  <script src="../js/child.js"></script>
+  <!-- RECORD DETAIL MODAL (remaining vaccines per child) -->
+  <div id="recordDetailModal" class="modal">
+    <div class="modal-content record-detail-modal">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div class="modal-icon" id="recordDetailIcon" style="background: #06b6d4; color: #ffffff;"><i class="fa-solid fa-child"></i></div>
+          <div>
+            <h2 id="recordDetailName">Record</h2>
+            <p id="recordDetailMeta">Health record details</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" id="closeRecordDetailBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="recordDetailBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/session.js?v=20260912c"></script>
+  <script src="../js/credentials.js?v=20260912c"></script>
+  <script src="../js/purok-data.js?v=20260912c"></script>
+  <script src="../js/child.js?v=20260912c"></script>
 </body>
 </html>

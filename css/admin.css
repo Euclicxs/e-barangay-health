@@ -3035,3 +3035,333 @@ button:not([class*="btn"]) {
 .coverage-stats .stat-card h2 {
   font-size: 26px;
 }
+
+/* ============================================================
+   DATA ANALYTICS — DE-DUPED LAYOUT + POSITIVE/NEGATIVE BALANCE
+   ============================================================ */
+
+/* Single full-width bar chart (donut removed) */
+.analytics-charts-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Paired positive/negative stats on coverage cards */
+.coverage-stats .pos {
+  color: #15803d;
+}
+
+.coverage-stats .pos strong {
+  color: inherit;
+}
+
+.coverage-stats .neg {
+  color: #b91c1c;
+}
+
+.coverage-stats .neg strong {
+  color: inherit;
+}
+
+.coverage-stats .pos i,
+.coverage-stats .neg i {
+  font-size: 9px;
+  margin-right: 3px;
+}
+
+/* Strengths & Weaknesses summary block */
+.sw-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.sw-col {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.sw-col h4 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sw-good h4 {
+  color: #15803d;
+}
+
+.sw-bad h4 {
+  color: #b91c1c;
+}
+
+.sw-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.sw-col li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.sw-col li i {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.sw-good li i {
+  color: #16a34a;
+}
+
+.sw-bad li i {
+  color: #dc2626;
+}
+
+.sw-col li span {
+  flex: 1;
+}
+
+@media (max-width: 700px) {
+  .sw-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Modal gaps-chart toggle */
+.coverage-modal-action {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.btn-gaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #06b6d4;
+  color: #ffffff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-gaps:hover {
+  background: #0891b2;
+}
+
+.btn-gaps:active {
+  transform: translateY(1px);
+}
+
+.modal-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.modal-chart-head h3 {
+  font-size: 14px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modal-chart-box {
+  height: 340px;
+}
+
+/* ============================================================
+   RECORD DETAIL MODAL — remaining vaccines / injections per person
+   ============================================================ */
+.record-detail-modal {
+  max-width: 480px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.record-detail-modal .modal-header {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 20px;
+}
+
+.record-detail-modal .modal-body {
+  padding: 18px 20px 22px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.detail-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.detail-banner.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #15803d;
+}
+
+.detail-banner.warn {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #b91c1c;
+}
+
+.detail-summary {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.detail-summary strong {
+  color: #0f172a;
+}
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.detail-row i {
+  font-size: 13px;
+}
+
+.detail-row.ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.detail-row.ok i {
+  color: #16a34a;
+}
+
+.detail-row.miss {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.detail-row.miss i {
+  color: #dc2626;
+}
+
+.detail-row.na {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.detail-row.na i {
+  color: #94a3b8;
+}
+
+.detail-label {
+  flex: 1;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.detail-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.detail-row.ok .detail-status {
+  color: #15803d;
+}
+
+.detail-row.miss .detail-status {
+  color: #b91c1c;
+}
+
+.detail-row.na .detail-status {
+  color: #64748b;
+}
+
+.chips-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  margin-bottom: 6px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.chip-missing {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Clickable names inside coverage modals */
+.coverage-name-list li[data-code] {
+  cursor: pointer;
+}
+
+.coverage-name-list li[data-code]:hover {
+  background: #f1f5f9;
+}
+
+.coverage-name-list li .name-link:hover {
+  color: #0891b2;
+  text-decoration: underline;
+}
+
+/* Clickable names in the masterlist table */
+.person-name.clickable {
+  cursor: pointer;
+}
+
+.person-name.clickable:hover {
+  color: #0891b2;
+  text-decoration: underline;
+}

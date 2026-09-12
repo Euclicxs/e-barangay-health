@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="person-name">${rec.name}</td>
+        <td class="person-name clickable" data-code="${rec.code || ''}" title="View remaining vaccines/injections">${rec.name}</td>
         ${isAll ? `<td class="masterlist-purok-col">${purokName}</td>` : ''}
         <td>${typeTag}</td>
         <td>${rec.address}</td>
@@ -790,31 +790,52 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
 
   let purokBarChartInstance = null;
-  let statusDonutChartInstance = null;
-  let vaccineGapChartInstance = null;
+  let modalGapChartInstance = null;
+  let modalChartType = 'vaccine';
   let currentAnalyticsRange = 'month';
 
-  // Vaccine type coverage data (derived from live records)
-  const vaccineTypes = (function () {
-    if (typeof getAllPurokRecords !== 'function' || typeof VACCINES === 'undefined') {
-      return [
-        { name: 'BCG', total: 0, covered: 0 },
-        { name: 'OPV', total: 0, covered: 0 },
-        { name: 'IPV', total: 0, covered: 0 },
-        { name: 'PENTA', total: 0, covered: 0 },
-        { name: 'PCV', total: 0, covered: 0 },
-        { name: 'MCV1', total: 0, covered: 0 },
-        { name: 'MCV2', total: 0, covered: 0 }
-      ];
+  // Live coverage computations — single source of truth for the coverage cards,
+  // stat cards, gaps charts and prescriptive rules (keeps the data consistent).
+  function computeVaccineCoverage() {
+    const children = getAllPurokRecords().filter(r => r.type === 'Child');
+    const total = children.length;
+    const list = (typeof VACCINES !== 'undefined' && Array.isArray(VACCINES))
+      ? VACCINES
+      : ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+    return list.map(v => {
+      const covered = children.filter(rec => Array.isArray(rec.vaccines) && rec.vaccines.includes(v)).length;
+      return {
+        name: v,
+        total,
+        covered,
+        missing: total - covered,
+        pct: total ? Math.round((covered / total) * 100) : 0
+      };
+    });
+  }
+
+  function computeMaternalCoverage() {
+    const mothers = getAllPurokRecords().filter(r => r.type === 'Mother');
+    const total = mothers.length;
+    const tt = [];
+    for (let dose = 1; dose <= 5; dose++) {
+      const reached = mothers.filter(m => ttDoseLevel(m) >= dose).length;
+      tt.push({ dose, reached, missing: total - reached, pct: total ? Math.round((reached / total) * 100) : 0 });
     }
-    const allChildren = getAllPurokRecords().filter(r => r.type === 'Child');
-    const total = allChildren.length;
-    return VACCINES.map(v => ({
-      name: v,
+    const ironCount = mothers.filter(m => !!m.iron).length;
+    const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
+    return {
       total,
-      covered: allChildren.filter(rec => Array.isArray(rec.vaccines) && rec.vaccines.includes(v)).length
-    }));
-  })();
+      tt,
+      ironCount,
+      ironPct: total ? Math.round((ironCount / total) * 100) : 0,
+      ironMissing: total - ironCount,
+      bpCount,
+      bpPct: total ? Math.round((bpCount / total) * 100) : 0,
+      normalBpPct: total ? Math.round(((total - bpCount) / total) * 100) : 0,
+      tt5: tt.length ? tt[4] : { reached: 0, missing: 0, pct: 0 }
+    };
+  }
 
   // Filter records by date range
   function filterRecordsByRange(records, range) {
@@ -930,35 +951,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Render donut chart: Status Distribution
-  function renderDonutChart(data) {
-    const ctx = document.getElementById('statusDonutChart');
-    if (!ctx) return;
-
-    if (statusDonutChartInstance) statusDonutChartInstance.destroy();
-
-    statusDonutChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Overdue', 'Due This Month', 'Completed'],
-        datasets: [{
-          data: [data.overdue, data.dueMonth, data.completed],
-          backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
-          borderWidth: 0,
-          hoverOffset: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
-        plugins: {
-          legend: { position: 'bottom' }
-        }
-      }
-    });
-  }
-
   // Shared analytics helpers
   function setElText(id, text) {
     const el = document.getElementById(id);
@@ -989,101 +981,89 @@ document.addEventListener('DOMContentLoaded', () => {
     return parseInt(match[1], 10) >= 130 || parseInt(match[2], 10) >= 80;
   }
 
-  // Render vaccination coverage (clickable cards)
+  // Render vaccination coverage (clickable cards) — positive/negative balance
   function renderVaccineCoverage() {
     const container = document.getElementById('vaccCoverageList');
     if (!container) return;
 
-    const children = getAllPurokRecords().filter(r => r.type === 'Child');
-    const total = children.length;
-    if (total === 0) {
+    const vaccineStats = computeVaccineCoverage();
+    if (vaccineStats.length === 0 || vaccineStats[0].total === 0) {
       container.innerHTML = '<p class="coverage-empty">No child records available.</p>';
       return;
     }
 
-    container.innerHTML = vaccineTypes.map(vax => {
-      const pct = Math.round((vax.covered / vax.total) * 100);
-      const pending = vax.total - vax.covered;
-      const barColor = coverageBarClass(pct);
+    container.innerHTML = vaccineStats.map(vax => {
+      const barColor = coverageBarClass(vax.pct);
       return `
         <div class="coverage-card" data-cover="${vax.name}" title="View who received ${vax.name}">
           <div class="coverage-card-head">
             <span class="coverage-code">${vax.name}</span>
-            <span class="coverage-pct text-${barColor}">${pct}%</span>
+            <span class="coverage-pct text-${barColor}">${vax.pct}%</span>
           </div>
           <div class="coverage-stats">
-            <span><strong>${vax.covered}</strong>/<strong>${vax.total}</strong> covered</span>
-            <span class="${pending > 0 ? 'text-red' : 'text-green'}">${pending} pending</span>
+            <span class="pos"><i class="fa-solid fa-circle-check"></i> <strong>${vax.covered}</strong> covered</span>
+            <span class="${vax.missing > 0 ? 'neg' : 'pos'}"><i class="fa-solid fa-circle-xmark"></i> <strong>${vax.missing}</strong> missing</span>
           </div>
-          <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${pct}%;"></div></div>
+          <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${vax.pct}%;"></div></div>
         </div>
       `;
     }).join('');
   }
 
-  // Render maternal / prenatal coverage (clickable cards)
+  // Render maternal / prenatal coverage (clickable cards) — positive/negative balance
   function renderMaternalCoverage() {
     const container = document.getElementById('maternalCoverageList');
     if (!container) return;
 
-    const mothers = getAllPurokRecords().filter(r => r.type === 'Mother');
-    const total = mothers.length;
-    if (total === 0) {
+    const mc = computeMaternalCoverage();
+    if (mc.total === 0) {
       container.innerHTML = '<p class="coverage-empty">No maternal records available.</p>';
       return;
     }
 
-    const cards = [];
-    for (let dose = 1; dose <= 5; dose++) {
-      const reached = mothers.filter(m => ttDoseLevel(m) >= dose).length;
-      const pct = Math.round((reached / total) * 100);
-      const notYet = total - reached;
-      const barColor = coverageBarClass(pct);
-      cards.push(`
-        <div class="coverage-card" data-cover="tt-${dose}" title="View who reached TT ${dose}">
+    const cards = mc.tt.map(t => {
+      const barColor = coverageBarClass(t.pct);
+      return `
+        <div class="coverage-card" data-cover="tt-${t.dose}" title="View who reached TT ${t.dose}">
           <div class="coverage-card-head">
-            <span class="coverage-code">TT ${dose}</span>
-            <span class="coverage-pct text-${barColor}">${pct}%</span>
+            <span class="coverage-code">TT ${t.dose}</span>
+            <span class="coverage-pct text-${barColor}">${t.pct}%</span>
           </div>
           <div class="coverage-stats">
-            <span><strong>${reached}</strong>/<strong>${total}</strong> reached</span>
-            <span class="${notYet > 0 ? 'text-red' : 'text-green'}">${notYet} not yet</span>
+            <span class="pos"><i class="fa-solid fa-circle-check"></i> <strong>${t.reached}</strong> reached</span>
+            <span class="${t.missing > 0 ? 'neg' : 'pos'}"><i class="fa-solid fa-circle-xmark"></i> <strong>${t.missing}</strong> not yet</span>
           </div>
-          <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${pct}%;"></div></div>
+          <div class="progress-bg"><div class="progress-bar ${barColor}" style="width: ${t.pct}%;"></div></div>
         </div>
-      `);
-    }
+      `;
+    });
 
-    const ironCount = mothers.filter(m => !!m.iron).length;
-    const ironPct = Math.round((ironCount / total) * 100);
-    const ironBar = coverageBarClass(ironPct);
+    const ironBar = coverageBarClass(mc.ironPct);
     cards.push(`
       <div class="coverage-card" data-cover="iron" title="View mothers on iron supplementation">
         <div class="coverage-card-head">
           <span class="coverage-code">IRON</span>
-          <span class="coverage-pct text-${ironBar}">${ironPct}%</span>
+          <span class="coverage-pct text-${ironBar}">${mc.ironPct}%</span>
         </div>
         <div class="coverage-stats">
-          <span><strong>${ironCount}</strong>/<strong>${total}</strong> on iron</span>
-          <span class="${(total - ironCount) > 0 ? 'text-red' : 'text-green'}">${total - ironCount} not taking</span>
+          <span class="pos"><i class="fa-solid fa-circle-check"></i> <strong>${mc.ironCount}</strong> on iron</span>
+          <span class="${mc.ironMissing > 0 ? 'neg' : 'pos'}"><i class="fa-solid fa-circle-xmark"></i> <strong>${mc.ironMissing}</strong> not taking</span>
         </div>
-        <div class="progress-bg"><div class="progress-bar ${ironBar}" style="width: ${ironPct}%;"></div></div>
+        <div class="progress-bg"><div class="progress-bar ${ironBar}" style="width: ${mc.ironPct}%;"></div></div>
       </div>
     `);
 
-    const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
-    const bpPct = Math.round((bpCount / total) * 100);
     cards.push(`
       <div class="coverage-card" data-cover="bp" title="View mothers with elevated blood pressure">
         <div class="coverage-card-head">
           <span class="coverage-code">HIGH BP</span>
-          <span class="coverage-pct text-${bpCount > 0 ? 'red' : 'green'}">${bpPct}%</span>
+          <span class="coverage-pct text-${mc.bpCount > 0 ? 'red' : 'green'}">${mc.bpPct}%</span>
         </div>
         <div class="coverage-stats">
-          <span><strong>${bpCount}</strong>/<strong>${total}</strong> elevated</span>
-          <span class="${bpCount > 0 ? 'text-red' : 'text-green'}">${bpCount === 0 ? 'none' : 'monitor closely'}</span>
+          <span class="${mc.bpCount > 0 ? 'neg' : 'pos'}"><i class="fa-solid ${mc.bpCount > 0 ? 'fa-circle-xmark' : 'fa-circle-check'}"></i> <strong>${mc.bpCount}</strong> elevated</span>
+          <span class="${mc.bpCount > 0 ? 'neg' : 'pos'}">${mc.bpCount === 0 ? '<strong>0</strong> at risk' : 'monitor closely'}</span>
         </div>
-        <div class="progress-bg"><div class="progress-bar red" style="width: ${bpPct}%;"></div></div>
+        <div class="progress-bg"><div class="progress-bar red" style="width: ${mc.bpPct}%;"></div></div>
       </div>
     `);
 
@@ -1094,47 +1074,54 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderCoverageStatCards() {
     const allRecords = getAllPurokRecords();
     const children = allRecords.filter(r => r.type === 'Child');
-    const mothers = allRecords.filter(r => r.type === 'Mother');
 
-    const totalVax = vaccineTypes.reduce((s, v) => s + v.total, 0);
-    const coveredVax = vaccineTypes.reduce((s, v) => s + v.covered, 0);
+    const vaccineStats = computeVaccineCoverage();
+    const totalVax = vaccineStats.reduce((s, v) => s + v.total, 0);
+    const coveredVax = vaccineStats.reduce((s, v) => s + v.covered, 0);
     const avgVaccinePct = totalVax ? Math.round((coveredVax / totalVax) * 100) : 0;
 
     const fullyProtected = children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
-    const tt5Reached = mothers.filter(m => ttDoseLevel(m) >= 5).length;
-    const tt5Pct = mothers.length ? Math.round((tt5Reached / mothers.length) * 100) : 0;
-    const bpCount = mothers.filter(m => isHighBP(m.bp)).length;
+    const maternal = computeMaternalCoverage();
 
     setElText('analyticsVaccineCoverage', `${avgVaccinePct}%`);
     setElText('analyticsFullyProtected', String(fullyProtected));
-    setElText('analyticsTt5Coverage', `${tt5Pct}%`);
-    setElText('analyticsHighBpMothers', String(bpCount));
+    setElText('analyticsTt5Coverage', `${maternal.tt5.pct}%`);
+    setElText('analyticsHighBpMothers', String(maternal.bpCount));
   }
 
-  // Render top vaccine gaps chart (lowest coverage first)
-  function renderVaccineGapChart() {
-    const ctx = document.getElementById('vaccineGapChart');
+  // Render coverage gaps chart inside the coverage modal (vaccine or maternal panel)
+  function renderModalGapChart() {
+    const ctx = document.getElementById('modalGapChart');
     if (!ctx) return;
 
-    const sorted = vaccineTypes.slice().sort((a, b) => {
-      const aPct = a.total ? a.covered / a.total : 0;
-      const bPct = b.total ? b.covered / b.total : 0;
-      return aPct - bPct;
-    });
+    if (modalGapChartInstance) modalGapChartInstance.destroy();
 
-    const labels = sorted.map(v => v.name);
-    const data = sorted.map(v => v.total ? Math.round((v.covered / v.total) * 100) : 0);
+    let items;
+    let title;
+    if (modalChartType === 'maternal') {
+      const mc = computeMaternalCoverage();
+      items = [
+        ...mc.tt.map(t => ({ label: `TT ${t.dose}`, pct: t.pct })),
+        { label: 'IRON', pct: mc.ironPct },
+        { label: 'NORMAL BP', pct: mc.normalBpPct }
+      ];
+      title = 'Maternal & Prenatal Coverage Gaps';
+    } else {
+      items = computeVaccineCoverage().map(v => ({ label: v.name, pct: v.pct }));
+      title = 'Top Vaccination Gaps';
+    }
 
-    if (vaccineGapChartInstance) vaccineGapChartInstance.destroy();
+    items.sort((a, b) => a.pct - b.pct);
+    setElText('modalGapChartTitle', title);
 
-    vaccineGapChartInstance = new Chart(ctx, {
+    modalGapChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: labels,
+        labels: items.map(i => i.label),
         datasets: [{
           label: 'Coverage %',
-          data: data,
-          backgroundColor: data.map(p => p >= 80 ? '#22c55e' : p >= 50 ? '#f59e0b' : '#ef4444'),
+          data: items.map(i => i.pct),
+          backgroundColor: items.map(i => i.pct >= 80 ? '#22c55e' : i.pct >= 50 ? '#f59e0b' : '#ef4444'),
           borderRadius: 4
         }]
       },
@@ -1151,6 +1138,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Reset modal to the list view and destroy any open gaps chart
+  function resetCoverageModalViews() {
+    if (modalGapChartInstance) {
+      modalGapChartInstance.destroy();
+      modalGapChartInstance = null;
+    }
+    const listView = document.getElementById('coverageModalListView');
+    const chartView = document.getElementById('coverageModalChartView');
+    if (listView) listView.style.display = '';
+    if (chartView) chartView.style.display = 'none';
+  }
+
   // Render per-purok coverage table
   function renderPerPurokCoverage() {
     const tbody = document.getElementById('perPurokCoverageBody');
@@ -1164,9 +1163,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const children = recs.filter(r => r.type === 'Child');
       const mothers = recs.filter(r => r.type === 'Mother');
 
-      const fullyPct = children.length
-        ? Math.round((children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length / children.length) * 100)
-        : 0;
       const tt5Pct = mothers.length
         ? Math.round((mothers.filter(m => ttDoseLevel(m) >= 5).length / mothers.length) * 100)
         : 0;
@@ -1180,7 +1176,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><strong>${purokData[key].name}</strong></td>
         <td>${children.length}</td>
         <td>${mothers.length}</td>
-        <td class="${rangeRateClass(fullyPct)}"><strong>${fullyPct}%</strong></td>
         <td class="${rangeRateClass(tt5Pct)}">${tt5Pct}%</td>
         <td class="${rangeRateClass(ironPct)}">${ironPct}%</td>
         <td><span class="status-pill status-${bpCount > 0 ? 'red' : 'green'}">${bpCount}</span></td>
@@ -1189,17 +1184,125 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Render Strengths & Weaknesses summary (positive/negative balance)
+  function renderStrengthsWeaknesses() {
+    const strengthsEl = document.getElementById('swStrengthsList');
+    const weaknessesEl = document.getElementById('swWeaknessesList');
+    if (!strengthsEl || !weaknessesEl) return;
+
+    strengthsEl.innerHTML = '';
+    weaknessesEl.innerHTML = '';
+
+    const addLi = (listEl, icon, text) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<i class="fa-solid ${icon}"></i><span>${text}</span>`;
+      listEl.appendChild(li);
+    };
+
+    const allRecords = getAllPurokRecords();
+    const children = allRecords.filter(r => r.type === 'Child');
+    const mothers = allRecords.filter(r => r.type === 'Mother');
+    const vaccineStats = computeVaccineCoverage();
+    const maternal = computeMaternalCoverage();
+
+    // Vaccine strengths & weaknesses
+    if (children.length > 0) {
+      const bestVax = [...vaccineStats].sort((a, b) => b.pct - a.pct)[0];
+      if (bestVax && bestVax.pct > 0) {
+        addLi(strengthsEl, 'fa-circle-check', `${bestVax.name} is the most delivered vaccine at ${bestVax.pct}% (${bestVax.covered}/${bestVax.total} children).`);
+      }
+      vaccineStats
+        .filter(v => v.total > 0 && v.pct < 70)
+        .sort((a, b) => a.pct - b.pct)
+        .forEach(v => {
+          addLi(weaknessesEl, 'fa-triangle-exclamation', `${v.name} coverage is only ${v.pct}% — ${v.missing} child(ren) still missing this dose.`);
+        });
+
+      const fullyProtected = children.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
+      const fullyPct = Math.round((fullyProtected / children.length) * 100);
+      if (fullyPct >= 70) {
+        addLi(strengthsEl, 'fa-shield-halved', `${fullyPct}% of children are fully protected with all routine vaccines.`);
+      } else {
+        addLi(weaknessesEl, 'fa-shield-halved', `Only ${fullyPct}% of children are fully protected — ${children.length - fullyProtected} incomplete.`);
+      }
+    }
+
+    // Maternal strengths & weaknesses
+    if (mothers.length > 0) {
+      if (maternal.tt5.pct >= 70) {
+        addLi(strengthsEl, 'fa-person-pregnant', `${maternal.tt5.pct}% of mothers have completed TT5 (protective tetanus toxoid level).`);
+      } else {
+        addLi(weaknessesEl, 'fa-person-pregnant', `Only ${maternal.tt5.pct}% of mothers completed TT5 — ${maternal.tt5.missing} still below the protective level.`);
+      }
+
+      if (maternal.ironPct >= 70) {
+        addLi(strengthsEl, 'fa-pills', `${maternal.ironPct}% of mothers are on iron supplementation.`);
+      } else {
+        addLi(weaknessesEl, 'fa-pills', `Only ${maternal.ironPct}% of mothers are on iron — ${maternal.ironMissing} not taking supplement.`);
+      }
+
+      if (maternal.bpCount === 0) {
+        addLi(strengthsEl, 'fa-heart-pulse', 'No mothers with elevated blood pressure — maternal monitoring looks healthy.');
+      } else {
+        addLi(weaknessesEl, 'fa-heart-pulse', `${maternal.bpCount} mother(s) have elevated blood pressure and need close monitoring.`);
+      }
+    }
+
+    // Purok-level strengths & weaknesses
+    const purokOverdue = {};
+    allRecords.forEach(rec => {
+      if (!purokOverdue[rec.purok]) purokOverdue[rec.purok] = { name: rec.purok, overdue: 0 };
+      if (rec.status === 'Overdue') purokOverdue[rec.purok].overdue++;
+    });
+    const cleanPuroks = Object.values(purokOverdue).filter(p => p.overdue === 0);
+    const overduePuroks = Object.values(purokOverdue).filter(p => p.overdue > 0).sort((a, b) => b.overdue - a.overdue);
+
+    if (cleanPuroks.length > 0) {
+      addLi(strengthsEl, 'fa-thumbs-up', `${cleanPuroks.length} purok(s) have zero overdue visits: ${cleanPuroks.map(p => p.name).join(', ')}.`);
+    }
+    if (overduePuroks.length > 0) {
+      addLi(weaknessesEl, 'fa-clock', `${overduePuroks.length} purok(s) have overdue visits (worst: ${overduePuroks[0].name}, ${overduePuroks[0].overdue} overdue record(s)).`);
+    }
+
+    // Per-purok full-immunization leaders & laggards
+    const perPurokFully = [];
+    Object.keys(purokData).forEach(key => {
+      const kids = allRecords.filter(r => r.purokKey === key && r.type === 'Child');
+      if (kids.length === 0) return;
+      const pct = Math.round((kids.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length / kids.length) * 100);
+      perPurokFully.push({ name: purokData[key].name, pct });
+    });
+    if (perPurokFully.length > 0) {
+      const leaders = perPurokFully.sort((a, b) => b.pct - a.pct);
+      const leader = leaders[0];
+      addLi(strengthsEl, 'fa-trophy', leader.pct >= 80
+        ? `${leader.name} leads full immunization at ${leader.pct}%.`
+        : `${leader.name} has the highest full immunization rate at ${leader.pct}%.`);
+      leaders.filter(p => p.pct < 50).forEach(p => {
+        addLi(weaknessesEl, 'fa-location-dot', `${p.name} is below 50% full immunization (${p.pct}%).`);
+      });
+    }
+
+    if (strengthsEl.children.length === 0) {
+      addLi(strengthsEl, 'fa-info-circle', 'No highlights available yet.');
+    }
+    if (weaknessesEl.children.length === 0) {
+      addLi(weaknessesEl, 'fa-circle-check', 'No weaknesses detected.');
+    }
+  }
+
   // ========== COVERAGE DETAILS MODAL (who is covered vs not) ==========
   function buildCoverageNameList(items) {
     if (!items.length) return '<li class="coverage-list-empty">No one in this group</li>';
     return items.map(item =>
-      `<li><i class="fa-solid fa-circle"></i><strong title="${item.name}">${item.name}</strong><span>Purok ${item.purok}</span></li>`
+      `<li data-code="${item.code || ''}"><i class="fa-solid fa-circle"></i><strong class="name-link" title="View remaining vaccines/injections">${item.name}</strong><span>Purok ${item.purok}</span></li>`
     ).join('');
   }
 
-  function openCoverageList(title, covered, pending, coveredHeading, pendingHeading) {
+  function openCoverageList(title, covered, pending, coveredHeading, pendingHeading, panelType) {
     const modal = document.getElementById('coverageListModal');
     if (!modal) return;
+    modalChartType = panelType === 'maternal' ? 'maternal' : 'vaccine';
     setElText('coverageListTitle', title);
     setElText('coverageListCoveredTitle', coveredHeading);
     setElText('coverageListPendingTitle', pendingHeading);
@@ -1207,12 +1310,129 @@ document.addEventListener('DOMContentLoaded', () => {
     const pendingEl = document.getElementById('coverageListPending');
     if (coveredEl) coveredEl.innerHTML = buildCoverageNameList(covered);
     if (pendingEl) pendingEl.innerHTML = buildCoverageNameList(pending);
+    const gapsBtn = document.getElementById('btnShowGapsChart');
+    if (gapsBtn) {
+      gapsBtn.innerHTML = `<i class="fa-solid fa-chart-column"></i> View ${modalChartType === 'maternal' ? 'Maternal Gaps' : 'Vaccine Gaps'} Chart`;
+    }
+    resetCoverageModalViews();
     modal.style.display = 'flex';
   }
 
   function closeCoverageList() {
+    resetCoverageModalViews();
     const modal = document.getElementById('coverageListModal');
     if (modal) modal.style.display = 'none';
+  }
+
+  // ========== RECORD DETAIL MODAL (remaining vaccines / injections per person) ==========
+  function buildRecordCodeMap() {
+    const map = {};
+    getAllPurokRecords().forEach(rec => { map[rec.code] = rec; });
+    return map;
+  }
+
+  function renderRecordDetail(code) {
+    const rec = buildRecordCodeMap()[code];
+    if (!rec) return;
+
+    const isChild = rec.type === 'Child';
+    const iconEl = document.getElementById('recordDetailIcon');
+    if (iconEl) iconEl.innerHTML = isChild
+      ? '<i class="fa-solid fa-child"></i>'
+      : '<i class="fa-solid fa-person-pregnant"></i>';
+    setElText('recordDetailName', rec.name);
+    setElText('recordDetailMeta', `${rec.type} · ${rec.code} · Purok ${rec.purok} · ${rec.address || 'No address'}`);
+
+    const body = document.getElementById('recordDetailBody');
+    if (!body) return;
+
+    let html = '';
+    if (isChild) {
+      const had = Array.isArray(rec.vaccines) ? rec.vaccines : [];
+      const missingNames = VACCINES.filter(v => !had.includes(v));
+
+      html = `
+        <div class="detail-banner ${missingNames.length === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingNames.length === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingNames.length === 0
+            ? 'Fully vaccinated — all routine vaccine doses received.'
+            : `${missingNames.length} of ${VACCINES.length} routine vaccine(s) still missing.`}</span>
+        </div>
+        <div class="detail-summary">${had.length}/${VACCINES.length} vaccines received</div>
+        <div class="detail-grid">
+          ${VACCINES.map(v => {
+            const has = had.includes(v);
+            return `
+              <div class="detail-row ${has ? 'ok' : 'miss'}">
+                <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                <span class="detail-label">${v}</span>
+                <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+              </div>`;
+          }).join('')}
+        </div>
+        ${missingNames.length ? `
+          <div class="chips-label">Not yet vaccinated:</div>
+          <div class="chip-row">${missingNames.map(n => `<span class="chip-missing">${n}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    } else {
+      const level = ttDoseLevel(rec);
+      const missingTt = 5 - level;
+      const missingIron = rec.iron ? 0 : 1;
+      const missingTotal = missingTt + missingIron;
+      const bpReading = rec.bp ? String(rec.bp) : '';
+      const bpHigh = isHighBP(rec.bp);
+      const bpStatus = !bpReading ? 'No reading' : (bpHigh ? 'Elevated' : 'Normal');
+      const bpClass = !bpReading ? 'na' : (bpHigh ? 'miss' : 'ok');
+      const ttRows = [];
+      for (let dose = 1; dose <= 5; dose++) {
+        const has = level >= dose;
+        ttRows.push(`
+          <div class="detail-row ${has ? 'ok' : 'miss'}">
+            <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">TT ${dose}</span>
+            <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+          </div>`);
+      }
+
+      html = `
+        <div class="detail-banner ${missingTotal === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingTotal === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingTotal === 0
+            ? 'All routine maternal injections are up to date.'
+            : `${missingTotal} injection item(s) still missing${missingIron ? ' (including iron supplementation)' : ''}.`}</span>
+        </div>
+        <div class="detail-summary">Current TT level: <strong>${level > 0 ? `TT ${level}` : 'None yet'}</strong></div>
+        <div class="detail-grid">
+          ${ttRows.join('')}
+          <div class="detail-row ${rec.iron ? 'ok' : 'miss'}">
+            <i class="fa-solid ${rec.iron ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">Iron Supplementation</span>
+            <span class="detail-status">${rec.iron ? 'Received' : 'Missing'}</span>
+          </div>
+          <div class="detail-row ${bpClass}">
+            <i class="fa-solid ${!bpReading ? 'fa-circle-info' : (bpHigh ? 'fa-circle-exclamation' : 'fa-circle-check')}"></i>
+            <span class="detail-label">Blood Pressure</span>
+            <span class="detail-status">${bpReading ? `${bpReading} — ${bpStatus}` : bpStatus}</span>
+          </div>
+        </div>
+        ${missingTt > 0 ? `
+          <div class="chips-label">Remaining tetanus toxoid doses:</div>
+          <div class="chip-row">${Array.from({ length: missingTt }, (_, i) => `<span class="chip-missing">TT ${level + 1 + i}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    }
+
+    body.innerHTML = html;
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeRecordDetail() {
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'none';
+    const body = document.getElementById('recordDetailBody');
+    if (body) body.innerHTML = '';
   }
 
   function handleCoverageCardClick(card) {
@@ -1227,23 +1447,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const covered = children.filter(c => Array.isArray(c.vaccines) && c.vaccines.includes(key));
       const pending = children.filter(c => !(Array.isArray(c.vaccines) && c.vaccines.includes(key)));
       openCoverageList(`${key} — Vaccination Coverage`, covered, pending,
-        `Vaccinated (${covered.length})`, `Not yet vaccinated (${pending.length})`);
+        `Vaccinated (${covered.length})`, `Not yet vaccinated (${pending.length})`, 'vaccine');
     } else if (key.indexOf('tt-') === 0) {
       const dose = parseInt(key.split('-')[1], 10) || 1;
       const covered = mothers.filter(m => ttDoseLevel(m) >= dose);
       const pending = mothers.filter(m => !(ttDoseLevel(m) >= dose));
       openCoverageList(`TT ${dose} — Immunization Coverage`, covered, pending,
-        `Reached TT ${dose} (${covered.length})`, `Not yet reached (${pending.length})`);
+        `Reached TT ${dose} (${covered.length})`, `Not yet reached (${pending.length})`, 'maternal');
     } else if (key === 'iron') {
       const covered = mothers.filter(m => !!m.iron);
       const pending = mothers.filter(m => !m.iron);
       openCoverageList('IRON — Iron Supplementation', covered, pending,
-        `Taking iron (${covered.length})`, `Not taking (${pending.length})`);
+        `Taking iron (${covered.length})`, `Not taking (${pending.length})`, 'maternal');
     } else if (key === 'bp') {
       const covered = mothers.filter(m => isHighBP(m.bp));
       const pending = mothers.filter(m => !isHighBP(m.bp));
       openCoverageList('HIGH BP — Blood Pressure Monitoring', covered, pending,
-        `Elevated BP (${covered.length})`, `Normal BP (${pending.length})`);
+        `Elevated BP (${covered.length})`, `Normal BP (${pending.length})`, 'maternal');
     }
   }
 
@@ -1306,12 +1526,78 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeCoverageList();
+    if (e.key !== 'Escape') return;
+    const detailModal = document.getElementById('recordDetailModal');
+    if (detailModal && detailModal.style.display === 'flex') {
+      closeRecordDetail();
+      return;
+    }
+    closeCoverageList();
   });
   const btnExportVaccine = document.getElementById('btnExportVaccineCsv');
   if (btnExportVaccine) btnExportVaccine.addEventListener('click', exportVaccineCsv);
   const btnExportMaternal = document.getElementById('btnExportMaternalCsv');
   if (btnExportMaternal) btnExportMaternal.addEventListener('click', exportMaternalCsv);
+
+  // Modal gaps-chart toggle
+  const btnShowGaps = document.getElementById('btnShowGapsChart');
+  if (btnShowGaps) {
+    btnShowGaps.addEventListener('click', function() {
+      const listView = document.getElementById('coverageModalListView');
+      const chartView = document.getElementById('coverageModalChartView');
+      if (listView) listView.style.display = 'none';
+      if (chartView) chartView.style.display = '';
+      renderModalGapChart();
+    });
+  }
+  const btnBackToList = document.getElementById('btnBackToList');
+  if (btnBackToList) {
+    btnBackToList.addEventListener('click', resetCoverageModalViews);
+  }
+
+  // Record detail modal bindings
+  const closeRecordDetailBtn = document.getElementById('closeRecordDetailBtn');
+  if (closeRecordDetailBtn) closeRecordDetailBtn.addEventListener('click', closeRecordDetail);
+  const recordDetailModal = document.getElementById('recordDetailModal');
+  if (recordDetailModal) {
+    recordDetailModal.addEventListener('click', function(e) {
+      if (e.target === recordDetailModal) closeRecordDetail();
+    });
+  }
+
+  // Clicking a name inside the coverage modal opens that person's remaining vaccines/injections
+  ['coverageListCovered', 'coverageListPending'].forEach(id => {
+    const nameList = document.getElementById(id);
+    if (nameList) {
+      nameList.addEventListener('click', function(e) {
+        const li = e.target.closest ? e.target.closest('li[data-code]') : null;
+        if (!li) return;
+        const code = li.getAttribute('data-code');
+        if (code) renderRecordDetail(code);
+      });
+    }
+  });
+
+  // Clicking a name in the Purok Masterlists table opens the same detail modal
+  const masterTableBody = document.getElementById('purok-table-body');
+  if (masterTableBody) {
+    masterTableBody.addEventListener('click', function(e) {
+      const nameCell = e.target.closest ? e.target.closest('.person-name') : null;
+      if (!nameCell) return;
+      const code = nameCell.getAttribute('data-code');
+      if (code) renderRecordDetail(code);
+    });
+  }
+
+  // Capture-phase fallback so name clicks always open the detail modal even if another
+  // handler ever calls stopPropagation() (covers coverage lists + masterlist names).
+  document.addEventListener('click', function(e) {
+    const el = e.target && e.target.closest ? e.target.closest('[data-code]') : null;
+    if (!el) return;
+    const code = el.getAttribute('data-code');
+    if (!code) return;
+    renderRecordDetail(code);
+  }, true);
 
   // ============================================================
   // PRESCRIPTIVE ANALYTICS
@@ -1341,12 +1627,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ranked = Object.values(purokStats).sort((a, b) => b.overdue - a.overdue);
 
-    // Generate recommendations
+    // Shared coverage metrics — single source, matches the cards & modal charts
+    const allChildren = data.allRecords.filter(r => r.type === 'Child');
+    const allMothers = data.allRecords.filter(r => r.type === 'Mother');
+    const vaccineStats = computeVaccineCoverage();
+    const maternal = computeMaternalCoverage();
+    const fullyProtected = allChildren.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
+    const fullyPct = allChildren.length ? Math.round((fullyProtected / allChildren.length) * 100) : 0;
+
     const recommendations = [];
+    const highlights = [];
     const highOverdue = ranked.filter(p => p.overdue > 0);
     const lowCompleted = ranked.filter(p => p.completed === 0 && p.total > 0);
     const dueRecords = data.filtered.filter(r => r.status === 'Due This Month');
+    const cleanPuroks = ranked.filter(p => p.overdue === 0);
 
+    // HIGHLIGHTS — what is going well (positives)
+    if (allChildren.length > 0) {
+      const bestVax = [...vaccineStats].sort((a, b) => b.pct - a.pct)[0];
+      if (bestVax && bestVax.pct >= 80) {
+        highlights.push({
+          type: 'highlight',
+          icon: 'fa-circle-check',
+          text: `${bestVax.name} is strongly covered at ${bestVax.pct}% (${bestVax.covered}/${bestVax.total} children).`
+        });
+      }
+      if (fullyPct >= 70 && fullyPct > 0) {
+        highlights.push({
+          type: 'highlight',
+          icon: 'fa-shield-halved',
+          text: `${fullyPct}% of children are fully protected with all routine vaccines.`
+        });
+      }
+    }
+    if (allMothers.length > 0) {
+      if (maternal.tt5.pct >= 70) {
+        highlights.push({
+          type: 'highlight',
+          icon: 'fa-person-pregnant',
+          text: `${maternal.tt5.pct}% of mothers have completed TT5 — protective tetanus toxoid coverage is on target.`
+        });
+      }
+      if (maternal.bpCount === 0) {
+        highlights.push({
+          type: 'highlight',
+          icon: 'fa-heart-pulse',
+          text: 'No elevated blood pressure cases among mothers — maternal monitoring looks healthy.'
+        });
+      }
+    }
+    if (cleanPuroks.length > 0) {
+      highlights.push({
+        type: 'highlight',
+        icon: 'fa-thumbs-up',
+        text: `Purok(s) ${cleanPuroks.map(p => p.name).join(', ')} are on schedule with zero overdue visits.`
+      });
+    }
+    recommendations.push(...highlights);
+
+    // ACTIONS — negatives & risks
     if (highOverdue.length > 0) {
       const names = highOverdue.map(p => p.name).join(', ');
       recommendations.push({
@@ -1374,13 +1713,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Coverage-based recommendations
-    const allChildren = data.allRecords.filter(r => r.type === 'Child');
-    const allMothers = data.allRecords.filter(r => r.type === 'Mother');
-
     if (allChildren.length > 0) {
-      const lowVax = vaccineTypes.filter(v => v.total > 0 && (v.covered / v.total) < 0.7);
+      const lowVax = vaccineStats.filter(v => v.total > 0 && v.pct < 70);
       if (lowVax.length > 0) {
-        const names = lowVax.map(v => `${v.name} (${Math.round((v.covered / v.total) * 100)}%)`).join(', ');
+        const names = lowVax.map(v => `${v.name} (${v.pct}%)`).join(', ');
         recommendations.push({
           type: lowVax.length >= 2 ? 'urgent' : 'warning',
           icon: 'fa-syringe',
@@ -1388,9 +1724,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      const fullyProtected = allChildren.filter(c => Array.isArray(c.vaccines) && VACCINES.every(v => c.vaccines.includes(v))).length;
-      const fullyPct = Math.round((fullyProtected / allChildren.length) * 100);
-      if (fullyPct < 70) {
+      if (fullyPct < 70 && allChildren.length > 0) {
         recommendations.push({
           type: 'warning',
           icon: 'fa-shield-halved',
@@ -1400,22 +1734,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (allMothers.length > 0) {
-      const tt5Reached = allMothers.filter(m => ttDoseLevel(m) >= 5).length;
-      const tt5Pct = Math.round((tt5Reached / allMothers.length) * 100);
-      if (tt5Pct < 70) {
+      if (maternal.tt5.pct < 70) {
         recommendations.push({
           type: 'warning',
           icon: 'fa-person-pregnant',
-          text: `Only ${tt5Pct}% of mothers have completed TT5. Schedule tetanus toxoid catch-up doses for the ${allMothers.length - tt5Reached} mothers below the protective level.`
+          text: `Only ${maternal.tt5.pct}% of mothers have completed TT5. Schedule tetanus toxoid catch-up doses for the ${maternal.tt5.missing} mothers below the protective level.`
         });
       }
 
-      const elevatedBp = allMothers.filter(m => isHighBP(m.bp));
-      if (elevatedBp.length > 0) {
+      if (maternal.bpCount > 0) {
         recommendations.push({
-          type: elevatedBp.length >= 2 ? 'urgent' : 'warning',
+          type: maternal.bpCount >= 2 ? 'urgent' : 'warning',
           icon: 'fa-heart-pulse',
-          text: `${elevatedBp.length} mother(s) have elevated blood pressure. Prioritize BP re-checks and referral for close monitoring.`
+          text: `${maternal.bpCount} mother(s) have elevated blood pressure. Prioritize BP re-checks and referral for close monitoring.`
         });
       }
     }
@@ -1475,7 +1806,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (recommendations.length === 0) {
+    // Fallback: nothing needs action (highlights-only counts as on track)
+    const hasActions = recommendations.some(r => r.type !== 'highlight');
+    if (!hasActions) {
       recommendations.push({
         type: 'success',
         icon: 'fa-circle-check',
@@ -1528,10 +1861,10 @@ document.addEventListener('DOMContentLoaded', () => {
         bgColor = 'rgba(245, 158, 11, 0.08)';
         borderColor = 'rgba(245, 158, 11, 0.3)';
         iconColor = '#f59e0b';
-      } else if (rec.type === 'success') {
+      } else if (rec.type === 'success' || rec.type === 'highlight') {
         bgColor = 'rgba(34, 197, 94, 0.08)';
         borderColor = 'rgba(34, 197, 94, 0.3)';
-        iconColor = '#22c55e';
+        iconColor = '#16a34a';
       }
 
       container.innerHTML += `
@@ -1582,12 +1915,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAnalytics() {
     const data = computeDescriptiveAnalytics();
     renderBarChart(data);
-    renderDonutChart(data);
     renderCoverageStatCards();
     renderVaccineCoverage();
     renderMaternalCoverage();
-    renderVaccineGapChart();
     renderPerPurokCoverage();
+    renderStrengthsWeaknesses();
 
     const prescriptive = computePrescriptiveAnalytics(data);
     renderPriorityRanking(prescriptive.ranked);

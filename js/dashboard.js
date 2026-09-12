@@ -189,7 +189,7 @@
         .filter(r => r.type === 'Child')
         .map(r => `
           <tr>
-            <td><strong>${r.name}</strong></td>
+            <td><strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong></td>
             <td>${r.ageLabel || '—'}</td>
             <td>${r.purok}</td>
             <td><span class="status-pill status-${statusPillClass(r.status)}">• ${r.status}</span></td>
@@ -205,7 +205,7 @@
           const type = r.type === 'Child' ? 'Child' : 'Maternal';
           return `
             <tr>
-              <td><strong>${r.name}</strong></td>
+              <td><strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong></td>
               <td><span class="badge badge-${type === 'Child' ? 'cyan' : 'red'}">${type}</span></td>
               <td>${r.purok}</td>
               <td class="text-red">${days} day${days === 1 ? '' : 's'}</td>
@@ -219,7 +219,7 @@
         .filter(r => r.type === 'Child' && r.status === 'Due This Month')
         .map(r => `
           <tr>
-            <td><strong>${r.name}</strong></td>
+            <td><strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong></td>
             <td>${r.ageLabel || '—'}</td>
             <td>${r.purok}</td>
             <td>${formatDateLabel(r.nextVisitDate)}</td>
@@ -232,7 +232,7 @@
         .filter(r => r.type === 'Child' && r.status === 'Completed')
         .map(r => `
           <tr>
-            <td><strong>${r.name}</strong></td>
+            <td><strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong></td>
             <td>${r.ageLabel || '—'}</td>
             <td>${r.purok}</td>
             <td>${formatDateLabel(r.lastVisitDate)}</td>
@@ -272,7 +272,7 @@
       childList.innerHTML = childRecords.slice(0, 3).map(r => `
         <li>
           <div>
-            <strong>${r.name}</strong>
+            <strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong>
             <span>Purok ${r.purok} · ${r.ageLabel || ''}</span>
           </div>
           <span class="status-pill status-${statusPillClass(r.status)}">• ${r.status}</span>
@@ -286,7 +286,7 @@
       maternalList.innerHTML = motherRecords.slice(0, 3).map(r => `
         <li>
           <div>
-            <strong>${r.name}</strong>
+            <strong class="clickable-name" data-code="${r.code}" title="View remaining vaccines/injections">${r.name}</strong>
             <span>Purok ${r.purok} · ${r.ageLabel || ''}</span>
           </div>
           <span class="status-pill status-${statusPillClass(r.status)}">• ${r.status}</span>
@@ -436,6 +436,121 @@
     listEl.innerHTML = ttRows.join('') + ironRow + bpRow;
   }
 
+  // ============ RECORD DETAIL MODAL (remaining vaccines / injections per person) ============
+  function buildDashboardRecordMap() {
+    const map = {};
+    getScopedRecords().forEach(r => { if (r.code) map[r.code] = r; });
+    return map;
+  }
+
+  function renderRecordDetail(code) {
+    const rec = buildDashboardRecordMap()[code];
+    if (!rec) return;
+
+    const isChild = rec.type === 'Child';
+    const iconEl = document.getElementById('recordDetailIcon');
+    if (iconEl) iconEl.innerHTML = isChild
+      ? '<i class="fa-solid fa-child"></i>'
+      : '<i class="fa-solid fa-person-pregnant"></i>';
+    const nameEl = document.getElementById('recordDetailName');
+    if (nameEl) nameEl.textContent = rec.name;
+    const metaEl = document.getElementById('recordDetailMeta');
+    if (metaEl) metaEl.textContent = `${rec.type} · ${rec.code} · Purok ${rec.purok} · ${rec.address || 'No address'}`;
+
+    const body = document.getElementById('recordDetailBody');
+    if (!body) return;
+
+    const vaxCodes = typeof VACCINES !== 'undefined' ? VACCINES : ['BCG', 'OPV', 'IPV', 'PENTA', 'PCV', 'MCV1', 'MCV2'];
+
+    let html = '';
+    if (isChild) {
+      const had = Array.isArray(rec.vaccines) ? rec.vaccines : [];
+      const missingNames = vaxCodes.filter(v => !had.includes(v));
+
+      html = `
+        <div class="detail-banner ${missingNames.length === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingNames.length === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingNames.length === 0
+            ? 'Fully vaccinated — all routine vaccine doses received.'
+            : `${missingNames.length} of ${vaxCodes.length} routine vaccine(s) still missing.`}</span>
+        </div>
+        <div class="detail-summary">${had.length}/${vaxCodes.length} vaccines received</div>
+        <div class="detail-grid">
+          ${vaxCodes.map(v => {
+            const has = had.includes(v);
+            return `
+              <div class="detail-row ${has ? 'ok' : 'miss'}">
+                <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                <span class="detail-label">${v}</span>
+                <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+              </div>`;
+          }).join('')}
+        </div>
+        ${missingNames.length ? `
+          <div class="chips-label">Not yet vaccinated:</div>
+          <div class="chip-row">${missingNames.map(n => `<span class="chip-missing">${n}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    } else {
+      const level = parseInt(String(rec.ttDose).replace(/\D/g, ''), 10) || 0;
+      const missingTt = 5 - level;
+      const missingIron = rec.iron ? 0 : 1;
+      const missingTotal = missingTt + missingIron;
+      const bpReading = rec.bp ? String(rec.bp) : '';
+      const bpHigh = isHighMaternalBp(rec.bp);
+      const bpStatus = !bpReading ? 'No reading' : (bpHigh ? 'Elevated' : 'Normal');
+      const bpClass = !bpReading ? 'na' : (bpHigh ? 'miss' : 'ok');
+      const ttRows = [];
+      for (let dose = 1; dose <= 5; dose++) {
+        const has = level >= dose;
+        ttRows.push(`
+          <div class="detail-row ${has ? 'ok' : 'miss'}">
+            <i class="fa-solid ${has ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">TT ${dose}</span>
+            <span class="detail-status">${has ? 'Received' : 'Missing'}</span>
+          </div>`);
+      }
+
+      html = `
+        <div class="detail-banner ${missingTotal === 0 ? 'success' : 'warn'}">
+          <i class="fa-solid ${missingTotal === 0 ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <span>${missingTotal === 0
+            ? 'All routine maternal injections are up to date.'
+            : `${missingTotal} injection item(s) still missing${missingIron ? ' (including iron supplementation)' : ''}.`}</span>
+        </div>
+        <div class="detail-summary">Current TT level: <strong>${level > 0 ? `TT ${level}` : 'None yet'}</strong></div>
+        <div class="detail-grid">
+          ${ttRows.join('')}
+          <div class="detail-row ${rec.iron ? 'ok' : 'miss'}">
+            <i class="fa-solid ${rec.iron ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+            <span class="detail-label">Iron Supplementation</span>
+            <span class="detail-status">${rec.iron ? 'Received' : 'Missing'}</span>
+          </div>
+          <div class="detail-row ${bpClass}">
+            <i class="fa-solid ${!bpReading ? 'fa-circle-info' : (bpHigh ? 'fa-circle-exclamation' : 'fa-circle-check')}"></i>
+            <span class="detail-label">Blood Pressure</span>
+            <span class="detail-status">${bpReading ? `${bpReading} — ${bpStatus}` : bpStatus}</span>
+          </div>
+        </div>
+        ${missingTt > 0 ? `
+          <div class="chips-label">Remaining tetanus toxoid doses:</div>
+          <div class="chip-row">${Array.from({ length: missingTt }, (_, i) => `<span class="chip-missing">TT ${level + 1 + i}</span>`).join('')}</div>
+        ` : ''}
+      `;
+    }
+
+    body.innerHTML = html;
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeRecordDetail() {
+    const modal = document.getElementById('recordDetailModal');
+    if (modal) modal.style.display = 'none';
+    const body = document.getElementById('recordDetailBody');
+    if (body) body.innerHTML = '';
+  }
+
   // Populate modal tables
   function populateModal(modalType) {
     if (sharedDataAvailable) {
@@ -540,6 +655,30 @@
   window.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
       e.target.style.display = 'none';
+    }
+  });
+
+  // Record detail modal: open from any clickable name (modal tables + summary lists).
+  // Capture phase so no other handler can stopPropagation() and silently swallow the click.
+  document.addEventListener('click', function(e) {
+    const nameEl = e.target.closest ? e.target.closest('.clickable-name[data-code]') : null;
+    if (!nameEl) return;
+    const code = nameEl.getAttribute('data-code');
+    if (!code) return;
+    // Hide any open stat-card modal so only the detail modal is visible
+    document.querySelectorAll('.modal').forEach(m => {
+      if (m.style.display === 'flex' && m.id !== 'recordDetailModal') m.style.display = 'none';
+    });
+    renderRecordDetail(code);
+  }, true);
+
+  const closeRecordDetailBtn = document.getElementById('closeRecordDetailBtn');
+  if (closeRecordDetailBtn) closeRecordDetailBtn.addEventListener('click', closeRecordDetail);
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const detailModal = document.getElementById('recordDetailModal');
+    if (detailModal && detailModal.style.display === 'flex') {
+      closeRecordDetail();
     }
   });
 
